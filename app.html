@@ -1,0 +1,118 @@
+<html>
+  <head>
+    <title>Pomodoro</title>
+    <link rel="stylesheet" href="css/main.css" />
+    <script defer src="js/main.js"></script>
+  </head>
+
+  <body>
+    <div id="container">
+      <div id="container-modes">
+        <span id="span-mode-pomo" onclick="setMode('pomo')"> Pomodoro </span>
+        <span id="span-mode-sbreak" onclick="setMode('sbreak')">
+          Short Break
+        </span>
+        <span id="span-mode-lbreak" onclick="setMode('lbreak')">
+          Long Break
+        </span>
+      </div>
+
+      <div id="container-timer">
+        <span id="span-timer-mins"></span>
+        <span id="span-timer-ticker">:</span>
+        <span id="span-timer-secs"></span>
+      </div>
+
+      <div id="container-buttons">
+        <button id="button-timer-start" onclick="startTimer()">START</button>
+        <button id="button-timer-pause" onclick="pauseTimer()">PAUSE</button>
+        <button id="button-timer-resume" onclick="resumeTimer()">RESUME</button>
+        <button id="button-timer-reset" onclick="resetTimer()">RESET</button>
+      </div>
+
+      <div>Round: <span id="span-round-count"> 1 </span></div>
+
+      <button onclick="test()">TEST</button>
+    </div>
+
+    <form id="form-settings">
+      <label>Settings</label>
+
+      <div>
+        <table>
+          <tr>
+            <td>Pomodoro</td>
+            <td>Short Break</td>
+            <td>Long Break</td>
+          </tr>
+          <tr>
+            <td>
+              <input
+                required
+                type="number"
+                id="input-setting-pomo-time"
+                min="1"
+                max="60"
+              />
+            </td>
+            <td>
+              <input
+                required
+                type="number"
+                id="input-setting-sbreak-time"
+                min="1"
+                max="60"
+              />
+            </td>
+            <td>
+              <input
+                required
+                type="number"
+                id="input-setting-lbreak-time"
+                min="1"
+                max="60"
+              />
+            </td>
+          </tr>
+        </table>
+
+        <div>
+          <div>
+            <label for="checkbox-auto-start-breaks">Auto start breaks?</label>
+            <input type="checkbox" id="checkbox-auto-start-breaks" />
+          </div>
+
+          <div>
+            <label for="select-alarm-sounds">Alarm Sound</label>
+            <select id="select-alarm-sounds"></select>
+          </div>
+
+          <div>
+            <label for="select-ticking-sounds">Ticking Sound</label>
+            <select id="select-ticking-sounds">
+              <option value="none">None</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Notification</label>
+            <select id="select-notif-event">
+              <option value="every">Every</option>
+              <option value="last">Last</option>
+            </select>
+            <input
+              required
+              type="number"
+              id="input-setting-notif-time"
+              min="1"
+              max="60"
+            />
+            <label> mins</label>
+          </div>
+        </div>
+      </div>
+
+      <input type="submit" value="OK" onclick="submitSetting()" />
+    </form>
+  </body>
+</html>

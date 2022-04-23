@@ -1,5 +1,9 @@
 const modes = ['pomo', 'sbreak', 'lbreak'];
 
+const state = {
+  notificationSupported: null,
+};
+
 const elements = {};
 
 const alarmSounds = {
@@ -27,9 +31,7 @@ const alarmSounds = {
   tickers: ['None', 'Clock Ticking 2 short.wav', 'Clock Ticking 2.wav'],
 };
 
-const notificationEvent = ['Last', 'Every'];
-
-let audio = new Audio('resources/audio/Alarm clock.wav');
+const notificationEvents = ['Last', 'Every'];
 
 const timer = {
   tick: null,
@@ -48,9 +50,10 @@ const settings = {
     },
     autoStartBreaks: true,
     alarmSound: alarmSounds.pomo[0],
+    alarmRepeatCount: 1,
     tickingSound: alarmSounds.tickers[0],
     notification: {
-      event: notificationEvent[0],
+      event: notificationEvents[0],
       timeInMins: 5,
     },
   },
@@ -78,11 +81,18 @@ function setMode(mode) {
     });
   } else throw new Error('Invalid mode: ' + mode);
 
-  updateTimerButtonVisibilities('reset');
+  updateButtonVisibilities('reset');
 }
 
-function updateTimerButtonVisibilities(state) {
+function updateButtonVisibilities(state) {
   switch (state) {
+    // case 'hide-all':
+    //   elements.timerPauseButton.className = 'removed';
+    //   elements.timerResetButton.className = 'removed';
+    //   elements.timerStartButton.className = 'removed';
+    //   elements.timerResumeButton.className = 'removed';
+    //   break;
+
     case 'start':
       elements.timerPauseButton.className = '';
       elements.timerResetButton.className = '';
@@ -116,11 +126,7 @@ function updateTimerButtonVisibilities(state) {
   }
 }
 
-function playAudio() {
-  audio.play();
-}
-
-function clearTimer() {
+function clearTimer(timerCompleted = false) {
   clearInterval(timer.tick);
 
   timer.tick = null;
@@ -129,20 +135,26 @@ function clearTimer() {
 
   elements.spanTicker.className = '';
 
-  elements.timer;
-  elements.timerStartButton.className = '';
+  if (timerCompleted) {
+    showNotification();
+    ring(settings.custom.alarmSound);
+  }
+
+  document.title = `Pomodoro`;
+
+  updateButtonVisibilities('reset');
 }
 
 function pauseTimer() {
-  updateTimerButtonVisibilities('pause');
+  updateButtonVisibilities('pause');
 }
 
 function resumeTimer() {
-  updateTimerButtonVisibilities('resume');
+  updateButtonVisibilities('resume');
 }
 
 function resetTimer() {
-  updateTimerButtonVisibilities('reset');
+  updateButtonVisibilities('reset');
 }
 
 // function stopTimer() {
@@ -155,7 +167,7 @@ function startTimer() {
   timer.tick = setInterval(function updateTicker() {
     timer.secs -= 1;
 
-    // if (timer.secs === 0) clearTimer();
+    if (timer.secs === 0) clearTimer(true);
 
     console.log('time:', {
       mins: Math.floor(timer.secs / 60)
@@ -165,18 +177,29 @@ function startTimer() {
       showTicker: !!(timer.secs % 2),
     });
 
-    elements.spanMins.innerText = Math.floor(timer.secs / 60)
+    const hr = Math.floor(timer.secs / 60)
       .toString()
       .padStart(2, '0');
-    elements.spanSecs.innerText = (timer.secs % 60).toString().padStart(2, '0');
-    elements.spanTicker.className = timer.secs % 2 ? 'hidden' : '';
+    const mins = (timer.secs % 60).toString().padStart(2, '0');
+    const showDivider = timer.secs % 2 ? 'hidden' : '';
+
+    elements.spanMins.innerText = hr;
+    elements.spanSecs.innerText = mins;
+    elements.spanTicker.className = showDivider;
+
+    document.title = `Pomodoro [${hr}${showDivider ? ':' : ' '}${mins}]`;
   }, 1000);
 
-  updateTimerButtonVisibilities('start');
+  updateButtonVisibilities('start');
 }
 
 window.onload = () => {
   /* Cache all HTML elements */
+  elements.containerNotif = document.getElementById('container-notif');
+
+  elements.labelNotifAsk = document.getElementById('label-notif-ask');
+  elements.labelNotifError = document.getElementById('label-notif-error');
+
   elements.spanMins = document.getElementById('span-timer-mins');
   elements.spanSecs = document.getElementById('span-timer-secs');
   elements.spanTicker = document.getElementById('span-timer-ticker');
@@ -204,6 +227,8 @@ window.onload = () => {
   elements.settingInputNotifTime = document.getElementById(
     'input-setting-notif-time'
   );
+  elements.settingInputAlarmRepeat =
+    document.getElementById('input-alarm-repeat');
 
   elements.settingCheckboxAutoStartBreaks = document.getElementById(
     'checkbox-auto-start-breaks'
@@ -242,6 +267,8 @@ window.onload = () => {
     elements.settingDropdownAlarmSounds.appendChild(option);
   });
 
+  elements.settingInputAlarmRepeat.value = settings.custom.alarmRepeatCount;
+
   alarmSounds.tickers.forEach(soundName => {
     const option = document.createElement('option');
     option.text = soundName.substring(
@@ -253,7 +280,7 @@ window.onload = () => {
     elements.settingDropdownTickingSounds.appendChild(option);
   });
 
-  notificationEvent.forEach(event => {
+  notificationEvents.forEach(event => {
     const option = document.createElement('option');
     option.text = event;
     option.value = event;
@@ -267,11 +294,68 @@ window.onload = () => {
   elements.settingInputNotifTime.value =
     settings.custom.notification.timeInMins;
 
-  /* Set inial mode to pomo */
+  // state.notification.supported = typeof Notification !== 'undefined';
+  // if (!state.notification.supported)
+
+  /* Set inital mode */
   setMode('pomo');
+
+  console.log(
+    'notif perm:',
+    Notification.permission,
+    ', supported:',
+    typeof Notification !== 'undefined'
+  );
+
+  state.notificationSupported = typeof Notification !== 'undefined';
+  if (state.notificationSupported) {
+    if (Notification.permission === 'default') {
+      elements.containerNotif.className = '';
+      elements.labelNotifError.className = 'removed';
+    } else if (Notification.permission === 'denied') {
+      elements.containerNotif.className = '';
+      elements.labelNotifAsk.className = 'removed';
+      elements.labelNotifError.innerText = `Browser notification disabled.
+Reminders won't be received`;
+    }
+  } else {
+    elements.containerNotif.className = '';
+    elements.labelNotifAsk.className = 'removed';
+    elements.labelNotifError.value = `Browser does not supports notification.
+Reminders won't be received`;
+
+    alert(
+      `Browser incompatibility:
+Your browser does not support notifications.
+Reminders won't be shown!`
+    );
+  }
 };
 
-function submitSetting() {
+function requestNotification() {
+  console.log(
+    'requestNotification called, currently:',
+    Notification.permission
+  );
+
+  if (state.notificationSupported) {
+    Notification.requestPermission().then(function (permission) {
+      console.log('requestNotification:', { permission });
+      if (permission === 'granted') {
+        elements.containerNotif.className = 'removed';
+      } else {
+        elements.containerNotif.className = '';
+        elements.labelNotifAsk.className = 'removed';
+        elements.labelNotifError.className = '';
+        elements.labelNotifError.innerText = `Browser notification disabled.
+Reminders won't be received`;
+        alert("Notification denied\nReminders won't be received!");
+      }
+    });
+  }
+}
+
+function saveSetting() {
   const userSettings = {
     times: {
       pomo: +elements.settingInputPomoTime.value * 60,
@@ -280,6 +364,7 @@ function submitSetting() {
     },
     autoStartBreaks: elements.settingCheckboxAutoStartBreaks.checked,
     alarmSound: elements.settingDropdownAlarmSounds.value,
+    alarmRepeatCount: +elements.settingInputAlarmRepeat.value,
     tickingSound: elements.settingDropdownTickingSounds.value,
     notification: {
       event: elements.settingDropdownNotifEvent.value,
@@ -306,6 +391,7 @@ function resetSetting() {
   elements.settingCheckboxAutoStartBreaks.checked =
     settings.default.autoStartBreaks;
   elements.settingDropdownAlarmSounds.value = settings.default.alarmSound;
+  elements.settingInputAlarmRepeat.value = settings.default.alarmRepeatCount;
   elements.settingDropdownTickingSounds.value = settings.default.tickingSound;
   elements.settingDropdownNotifEvent.value =
     settings.default.notification.event;
@@ -333,8 +419,41 @@ function test() {
   //   JSON.parse(localStorage.getItem(settings.storageKey))
   // );
   // localStorage.clear();
-  console.log({ settings });
+  // console.log({ settings });
   // console.log(elements.checkboxAutoStartBreaks.checked);
+  // ring(settings.default.alarmSound);
+
+  // elements.labelNotifError.value = 'dsfdsf';
+  // elements.containerNotif.className = 'removed';
+
+  // console.log('will start...');
+  // setTimeout(() => {
+  showNotification();
+  //   alert('notif shown');
+  // }, 4000);
+}
+
+function showNotification() {
+  if (document.visibilityState !== 'visible' && state.notification.permitted) {
+    const notification = new Notification('Pomodoro', {
+      body: 'Timer is up',
+      icon: 'resources/images/pomo.png',
+    });
+    notification.onclick = function () {
+      window.parent.focus();
+      notification.close();
+    };
+  }
+}
+
+let audio;
+
+function ring(soundName) {
+  console.log('ring', { soundName });
+
+  if (audio) audio.pause();
+  audio = new Audio(`resources/audio/${soundName}`);
+  audio.play();
 }
 
 window.onerror = (message, source, lineno, colno, error) =>

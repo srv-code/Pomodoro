@@ -1,12 +1,23 @@
 <html>
   <head>
     <title>Pomodoro</title>
+    <link rel="icon" type="image/png" href="resources/images/pomo.png" />
     <link rel="stylesheet" href="css/main.css" />
     <script defer src="js/main.js"></script>
   </head>
 
   <body>
     <div id="container">
+      <div id="container-notif" class="removed">
+        <img src="resources/images/attention.webp" height="20px" />
+        <label id="label-notif-ask">
+          Please
+          <a href="#" onclick="requestNotification()">enable</a>
+          notifications to receive reminders
+        </label>
+        <label id="label-notif-error"></label>
+      </div>
+
       <div id="container-modes">
         <span id="span-mode-pomo" onclick="setMode('pomo')"> Pomodoro </span>
         <span id="span-mode-sbreak" onclick="setMode('sbreak')">
@@ -87,12 +98,29 @@
 
           <div>
             <label for="select-alarm-sounds">Alarm Sound</label>
-            <select id="select-alarm-sounds"></select>
+            <select
+              id="select-alarm-sounds"
+              onchange="ring(this.value)"
+            ></select>
+          </div>
+
+          <div>
+            <label for="input-alarm-repeat">Alarm Repeat</label>
+            <input
+              required
+              type="number"
+              id="input-alarm-repeat"
+              min="1"
+              max="10"
+            />
           </div>
 
           <div>
             <label for="select-ticking-sounds">Ticking Sound</label>
-            <select id="select-ticking-sounds"></select>
+            <select
+              id="select-ticking-sounds"
+              onchange="ring(this.value)"
+            ></select>
           </div>
 
           <div>
@@ -111,7 +139,7 @@
       </div>
 
       <div>
-        <input type="button" value="OK" onclick="submitSetting()" />
+        <input type="button" value="OK" onclick="saveSetting()" />
         <input type="button" value="Reset" onclick="resetSetting()" />
       </div>
     </form>

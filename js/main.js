@@ -38,6 +38,7 @@ const timer = {
 };
 
 const settings = {
+  storageKey: 'settings',
   default: {
     times: {
       pomo: 25 * 60,
@@ -218,9 +219,9 @@ window.onload = () => {
     document.getElementById('select-notif-event');
 
   /* loads & sets custom settings */
-  settings.custom = {
-    ...(JSON.parse(localStorage.getItem('settings')) || settings.default),
-  };
+  settings.custom =
+    JSON.parse(localStorage.getItem(settings.storageKey)) ||
+    structuredClone(settings.default);
 
   /* Load values in all HTML elements */
   elements.settingInputPomoTime.value = Math.floor(
@@ -287,7 +288,7 @@ function submitSetting() {
   };
 
   settings.custom = userSettings;
-  localStorage.setItem('settings', JSON.stringify(userSettings));
+  localStorage.setItem(settings.storageKey, JSON.stringify(userSettings));
 
   console.log({ settings });
 }
@@ -312,6 +313,8 @@ function resetSetting() {
     settings.default.notification.timeInMins;
 
   localStorage.clear();
+
+  settings.custom = structuredClone(settings.default);
 }
 
 function test() {
@@ -323,11 +326,11 @@ function test() {
   //   // document.forms[0]['checkbox-auto-start-breaks'],
   //   document.forms['form-settings']['checkbox-auto-start-breaks']
   // );
-  // localStorage.setItem('settings', JSON.stringify(settings.default));
+  // localStorage.setItem(settings.storageKey, JSON.stringify(settings.default));
   // console.log(
   //   'localStorage:',
-  //   localStorage.getItem('settings'),
-  //   JSON.parse(localStorage.getItem('settings'))
+  // localStorage.getItem(settings.storageKey),
+  //   JSON.parse(localStorage.getItem(settings.storageKey))
   // );
   // localStorage.clear();
   console.log({ settings });

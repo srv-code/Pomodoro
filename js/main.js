@@ -17,15 +17,17 @@ const alarmSounds = {
     'Old Telephone.wav',
     'Reminder.wav',
     'Stroll.wav',
-    'Train whistle.wav',
+    'Train Whistle.wav',
     'Trill.wav',
     'Victory.wav',
     'Waves.wav',
     'Whistle.wav',
     'Yeehaw.wav',
   ],
-  tickers: ['Clock Ticking 2 short.wav', 'Clock Ticking 2.wav'],
+  tickers: ['None', 'Clock Ticking 2 short.wav', 'Clock Ticking 2.wav'],
 };
+
+const notificationEvent = ['Last', 'Every'];
 
 let audio = new Audio('resources/audio/Alarm clock.wav');
 
@@ -35,20 +37,29 @@ const timer = {
   mode: null,
 };
 
-const customSettings = {};
-
-const defaultTimerSettings = {
-  pomo: 25 * 60,
-  sbreak: 5 * 60,
-  lbreak: 15 * 60,
-
-  test: 10, // TODO: Remove this, for testing purpose only
+const settings = {
+  default: {
+    times: {
+      pomo: 25 * 60,
+      sbreak: 5 * 60,
+      lbreak: 15 * 60,
+      test: 10, // TODO: Remove this, for testing purpose only}
+    },
+    autoStartBreaks: true,
+    alarmSound: alarmSounds.pomo[0],
+    tickingSound: alarmSounds.tickers[0],
+    notification: {
+      event: notificationEvent[0],
+      timeInMins: 5,
+    },
+  },
+  custom: {},
 };
 
 function setMode(mode) {
   if (modes.includes(mode)) {
     timer.mode = mode;
-    timer.secs = defaultTimerSettings.test; // TODO: Remove this, for testing purpose only
+    timer.secs = settings.custom.times.test; // TODO: Remove this, for testing purpose only
     // timer.secs = defaultTimerSettings[mode]; // TODO: Enable this
 
     elements.spanMins.innerText = Math.floor(timer.secs / 60)
@@ -164,6 +175,7 @@ function startTimer() {
 }
 
 window.onload = () => {
+  /* Cache all HTML elements */
   elements.spanMins = document.getElementById('span-timer-mins');
   elements.spanSecs = document.getElementById('span-timer-secs');
   elements.spanTicker = document.getElementById('span-timer-ticker');
@@ -179,13 +191,107 @@ window.onload = () => {
 
   elements.spanRoundCounter = document.getElementById('span-round-count');
 
+  elements.settingInputPomoTime = document.getElementById(
+    'input-setting-pomo-time'
+  );
+  elements.settingInputSBreakTime = document.getElementById(
+    'input-setting-sbreak-time'
+  );
+  elements.settingInputLBreakTime = document.getElementById(
+    'input-setting-lbreak-time'
+  );
+  elements.settingInputNotifTime = document.getElementById(
+    'input-setting-notif-time'
+  );
+
+  elements.settingCheckboxAutoStartBreaks = document.getElementById(
+    'checkbox-auto-start-breaks'
+  );
+
+  elements.settingDropdownAlarmSounds = document.getElementById(
+    'select-alarm-sounds'
+  );
+  elements.settingDropdownTickingSounds = document.getElementById(
+    'select-ticking-sounds'
+  );
+  elements.settingDropdownNotifEvent =
+    document.getElementById('select-notif-event');
+
+  /* loads & sets custom settings */
+  settings.custom = {
+    ...(JSON.parse(localStorage.getItem('settings')) || settings.default),
+  };
+
+  /* Load values in all HTML elements */
+  elements.settingInputPomoTime.value = Math.floor(
+    settings.custom.times.pomo / 60
+  );
+  elements.settingInputSBreakTime.value = Math.floor(
+    settings.custom.times.sbreak / 60
+  );
+  elements.settingInputLBreakTime.value = Math.floor(
+    settings.custom.times.lbreak / 60
+  );
+
+  alarmSounds.pomo.forEach(soundName => {
+    const option = document.createElement('option');
+    option.text = soundName.substring(0, soundName.lastIndexOf('.'));
+    option.value = soundName;
+    option.selected = soundName === settings.custom.alarmSound;
+    elements.settingDropdownAlarmSounds.appendChild(option);
+  });
+
+  alarmSounds.tickers.forEach(soundName => {
+    const option = document.createElement('option');
+    option.text = soundName.substring(
+      0,
+      soundName === 'None' ? undefined : soundName.lastIndexOf('.')
+    );
+    option.value = soundName;
+    option.selected = soundName === settings.custom.tickingSound;
+    elements.settingDropdownTickingSounds.appendChild(option);
+  });
+
+  notificationEvent.forEach(event => {
+    const option = document.createElement('option');
+    option.text = event;
+    option.value = event;
+    option.selected = event === settings.custom.notification.event;
+    elements.settingDropdownNotifEvent.appendChild(option);
+  });
+
+  elements.settingCheckboxAutoStartBreaks.checked =
+    settings.custom.autoStartBreaks;
+
+  elements.settingInputNotifTime.value =
+    settings.custom.notification.timeInMins;
+
+  /* Set inial mode to pomo */
   setMode('pomo');
 };
 
+function submitSetting() {}
+
+function resetSetting() {}
+
 function test() {
-  console.log({ elements, timer });
+  // console.log({ elements, timer });
   // playAudio();
-  console.log('forms:', document.forms);
+  // console.log(
+  //   'forms:',
+  //   document.forms,
+  //   // document.forms[0]['checkbox-auto-start-breaks'],
+  //   document.forms['form-settings']['checkbox-auto-start-breaks']
+  // );
+  // localStorage.setItem('settings', JSON.stringify(settings.default));
+  // console.log(
+  //   'localStorage:',
+  //   localStorage.getItem('settings'),
+  //   JSON.parse(localStorage.getItem('settings'))
+  // );
+  // localStorage.clear();
+  // console.log({ settings });
+  // console.log(elements.checkboxAutoStartBreaks.checked);
 }
 
 window.onerror = (message, source, lineno, colno, error) =>

@@ -54,6 +54,7 @@
                 min="1"
                 max="60"
               />
+              mins
             </td>
             <td>
               <input
@@ -63,6 +64,7 @@
                 min="1"
                 max="60"
               />
+              mins
             </td>
             <td>
               <input
@@ -72,6 +74,7 @@
                 min="1"
                 max="60"
               />
+              mins
             </td>
           </tr>
         </table>
@@ -89,9 +92,7 @@
 
           <div>
             <label for="select-ticking-sounds">Ticking Sound</label>
-            <select id="select-ticking-sounds">
-              <option value="none">None</option>
-            </select>
+            <select id="select-ticking-sounds"></select>
           </div>
 
           <div>
@@ -112,7 +113,10 @@
         </div>
       </div>
 
-      <input type="submit" value="OK" onclick="submitSetting()" />
+      <div>
+        <input type="submit" value="OK" onclick="submitSetting()" />
+        <input type="button" value="Rest" onclick="resetSetting()" />
+      </div>
     </form>
   </body>
 </html>

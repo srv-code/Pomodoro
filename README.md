@@ -14,6 +14,6 @@ A replica of the [Pomofocus](https://pomofocus.io/) application
 
 - Store the settings using cookies / localStorage
 
-#### Test Cases
+### Test Cases
 
 - Check after inputting invalid setting values

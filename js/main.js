@@ -270,9 +270,49 @@ window.onload = () => {
   setMode('pomo');
 };
 
-function submitSetting() {}
+function submitSetting() {
+  const userSettings = {
+    times: {
+      pomo: +elements.settingInputPomoTime.value * 60,
+      sbreak: +elements.settingInputSBreakTime.value * 60,
+      lbreak: +elements.settingInputLBreakTime.value * 60,
+    },
+    autoStartBreaks: elements.settingCheckboxAutoStartBreaks.checked,
+    alarmSound: elements.settingDropdownAlarmSounds.value,
+    tickingSound: elements.settingDropdownTickingSounds.value,
+    notification: {
+      event: elements.settingDropdownNotifEvent.value,
+      timeInMins: elements.settingInputNotifTime.value,
+    },
+  };
 
-function resetSetting() {}
+  settings.custom = userSettings;
+  localStorage.setItem('settings', JSON.stringify(userSettings));
+
+  console.log({ settings });
+}
+
+function resetSetting() {
+  elements.settingInputPomoTime.value = Math.floor(
+    settings.default.times.pomo / 60
+  );
+  elements.settingInputSBreakTime.value = Math.floor(
+    settings.default.times.sbreak / 60
+  );
+  elements.settingInputLBreakTime.value = Math.floor(
+    settings.default.times.lbreak / 60
+  );
+  elements.settingCheckboxAutoStartBreaks.checked =
+    settings.default.autoStartBreaks;
+  elements.settingDropdownAlarmSounds.value = settings.default.alarmSound;
+  elements.settingDropdownTickingSounds.value = settings.default.tickingSound;
+  elements.settingDropdownNotifEvent.value =
+    settings.default.notification.event;
+  elements.settingInputNotifTime.value =
+    settings.default.notification.timeInMins;
+
+  localStorage.clear();
+}
 
 function test() {
   // console.log({ elements, timer });
@@ -290,7 +330,7 @@ function test() {
   //   JSON.parse(localStorage.getItem('settings'))
   // );
   // localStorage.clear();
-  // console.log({ settings });
+  console.log({ settings });
   // console.log(elements.checkboxAutoStartBreaks.checked);
 }
 

@@ -6,10 +6,11 @@ const modes = {
 
 const state = {
   notificationSupported: null,
+  selectedMode: null,
   rounds: {
-    pomos: 0,
-    breaks: 0,
-    lbreaks: 0,
+    pomo: 0,
+    sbreak: 0,
+    lbreak: 0,
   },
 };
 
@@ -105,6 +106,7 @@ function setMode(mode) {
   console.log('setMode', { mode });
 
   if (mode in modes) {
+    state.selectedMode = mode;
     timer.mode = mode;
     timer.secs = settings.custom.times.test; // TODO: Remove this, for testing purpose only
     // timer.secs = defaultTimerSettings[mode]; // TODO: Enable this
@@ -260,18 +262,30 @@ function startTimer() {
 
 function initializeTimer() {
   console.log({ timer });
+
+  if (!timer.mode) setMode(state.selectedMode);
+
   updateButtonVisibilities('start');
 
   startTimer()
     .then(function () {
       updateButtonVisibilities('reset');
-      console.log('changing doc title...');
+
       document.title = 'Pomodoro';
+
+      state.rounds[state.selectedMode]++;
+      updateRoundCounters();
     })
     .catch(function (e) {
       alert('Internal Error Occurred\n' + e.message);
       throw e;
     });
+}
+
+function updateRoundCounters() {
+  elements.spanPomoRoundCounter.innerText = state.rounds[modes.pomo];
+  elements.spanSBreakRoundCounter.innerText = state.rounds[modes.sbreak];
+  elements.spanLBreakRoundCounter.innerText = state.rounds[modes.lbreak];
 }
 
 window.onload = function () {
@@ -352,6 +366,8 @@ window.onload = function () {
   elements.settingInputLBreakTime.value = Math.floor(
     settings.custom.times.lbreak / 60
   );
+
+  updateRoundCounters();
 
   alarmSounds.pomo.forEach(soundName => {
     const option = document.createElement('option');

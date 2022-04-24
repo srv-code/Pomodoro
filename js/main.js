@@ -141,7 +141,7 @@ function clearTimer(timerCompleted = false) {
 
   if (timerCompleted) {
     showNotification();
-    ring(settings.custom.alarmSound);
+    ring(settings.custom.alarmSound, settings.custom.alarmRepeatCount);
   }
 
   document.title = `Pomodoro`;
@@ -197,7 +197,7 @@ function startTimer() {
   updateButtonVisibilities('start');
 }
 
-window.onload = () => {
+window.onload = function () {
   /* Cache all HTML elements */
   elements.containerNotif = document.getElementById('container-notif');
 
@@ -438,14 +438,12 @@ function test() {
   // localStorage.clear();
   // console.log({ settings });
   // console.log(elements.checkboxAutoStartBreaks.checked);
-  // ring(settings.default.alarmSound);
-
+  // ring(settings.default.alarmSound, 3);
   // elements.labelNotifError.value = 'dsfdsf';
   // elements.containerNotif.className = 'removed';
-
   // console.log('will start...');
   // setTimeout(() => {
-  showNotification();
+  // showNotification();
   //   alert('notif shown');
   // }, 4000);
 }
@@ -465,12 +463,24 @@ function showNotification() {
 
 let audio;
 
-function ring(soundName) {
-  console.log('ring', { soundName });
+function ring(soundName, repeatCount) {
+  console.log('ring', { soundName, repeatCount });
 
   if (audio) audio.pause();
   audio = new Audio(`resources/audio/${soundName}`);
   audio.play();
+
+  if (repeatCount > 1) {
+    let playCount = 1;
+    audio.onended = function () {
+      if (playCount < repeatCount) {
+        setTimeout(function () {
+          audio.play();
+          playCount++;
+        }, 500);
+      }
+    };
+  }
 }
 
 window.onerror = (message, source, lineno, colno, error) =>

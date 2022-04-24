@@ -219,8 +219,6 @@ function startTimer() {
         if (timer.secs === null || timer.secs === undefined)
           throw new Error('Invalid timer.secs: ' + timer.secs);
 
-        timer.secs -= 1;
-
         if (timer.secs === 0) {
           clearTimer({ reset: true, notify: true });
           resolve(null);
@@ -248,6 +246,8 @@ function startTimer() {
         else elements.spanTicker.classList.add('hidden');
 
         document.title = `Pomodoro [${hr}${showDivider ? ':' : ' '}${mins}]`;
+
+        timer.secs -= 1;
       } catch (e) {
         clearInterval(timer.tick);
         reject(e);

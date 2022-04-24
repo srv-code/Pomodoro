@@ -574,10 +574,9 @@ function test() {
 
 function showNotification() {
   if (
-    // document.visibilityState !== 'visible' &&
-    // state.notificationSupported &&
-    // Notification.permission === 'granted'
-    1
+    document.visibilityState !== 'visible' &&
+    state.notificationSupported &&
+    Notification.permission === 'granted'
   ) {
     const notification = new Notification('Pomodoro', {
       body: 'Timer is up',

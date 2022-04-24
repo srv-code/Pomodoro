@@ -24,10 +24,14 @@ const elements = {
   timerPauseButton: null,
   timerResumeButton: null,
   timerResetButton: null,
+  imageRingAlarm: null,
+  imageRingTick: null,
   headerPomo: null,
   headerSBreak: null,
   headerLBreak: null,
-  spanRoundCounter: null,
+  spanPomoRoundCounter: null,
+  spanSBreakRoundCounter: null,
+  spanLBreakRoundCounter: null,
   settingInputPomoTime: null,
   settingInputSBreakTime: null,
   settingInputLBreakTime: null,
@@ -80,7 +84,7 @@ const settings = {
       pomo: 25 * 60,
       sbreak: 5 * 60,
       lbreak: 15 * 60,
-      test: 5, // TODO: Remove this, for testing purpose only}
+      test: 3, // TODO: Remove this, for testing purpose only}
     },
     autoStart: {
       breaks: true,
@@ -109,14 +113,15 @@ function setMode(mode) {
       .toString()
       .padStart(2, '0');
     elements.spanSecs.innerText = (timer.secs % 60).toString().padStart(2, '0');
-    elements.spanTicker.className = '';
+    elements.spanTicker.classList.remove('removed');
 
     [
       { mode: 'pomo', element: elements.headerPomo },
       { mode: 'sbreak', element: elements.headerSBreak },
       { mode: 'lbreak', element: elements.headerLBreak },
     ].forEach(x => {
-      x.element.className = mode === x.mode ? 'highlighted-mode' : '';
+      if (mode === x.mode) x.element.classList.add('highlighted-mode');
+      else x.element.classList.remove('highlighted-mode');
     });
 
     updateButtonVisibilities('reset');
@@ -126,38 +131,38 @@ function setMode(mode) {
 function updateButtonVisibilities(state) {
   switch (state) {
     // case 'hide-all':
-    //   elements.timerPauseButton.className = 'removed';
-    //   elements.timerResetButton.className = 'removed';
-    //   elements.timerStartButton.className = 'removed';
-    //   elements.timerResumeButton.className = 'removed';
+    //   elements.timerPauseButton.classList.add('removed');
+    //   elements.timerResetButton.classList.add('removed');
+    //   elements.timerStartButton.classList.add('removed');
+    //   elements.timerResumeButton.classList.add('removed');
     //   break;
 
     case 'start':
-      elements.timerPauseButton.className = '';
-      elements.timerResetButton.className = '';
-      elements.timerStartButton.className = 'removed';
-      elements.timerResumeButton.className = 'removed';
+      elements.timerPauseButton.classList.remove('removed');
+      elements.timerResetButton.classList.remove('removed');
+      elements.timerStartButton.classList.add('removed');
+      elements.timerResumeButton.classList.add('removed');
       break;
 
     case 'pause':
-      elements.timerPauseButton.className = 'removed';
-      elements.timerResetButton.className = '';
-      elements.timerStartButton.className = 'removed';
-      elements.timerResumeButton.className = '';
+      elements.timerPauseButton.classList.add('removed');
+      elements.timerResetButton.classList.remove('removed');
+      elements.timerStartButton.classList.add('removed');
+      elements.timerResumeButton.classList.remove('removed');
       break;
 
     case 'resume':
-      elements.timerPauseButton.className = '';
-      elements.timerResetButton.className = '';
-      elements.timerStartButton.className = 'removed';
-      elements.timerResumeButton.className = 'removed';
+      elements.timerPauseButton.classList.remove('removed');
+      elements.timerResetButton.classList.remove('removed');
+      elements.timerStartButton.classList.add('removed');
+      elements.timerResumeButton.classList.add('removed');
       break;
 
     case 'reset':
-      elements.timerPauseButton.className = 'removed';
-      elements.timerResetButton.className = 'removed';
-      elements.timerStartButton.className = '';
-      elements.timerResumeButton.className = 'removed';
+      elements.timerPauseButton.classList.add('removed');
+      elements.timerResetButton.classList.add('removed');
+      elements.timerStartButton.classList.remove('removed');
+      elements.timerResumeButton.classList.add('removed');
       break;
 
     default:
@@ -174,7 +179,7 @@ function clearTimer({ reset = false, notify = false } = {}) {
     timer.secs = null;
   }
 
-  elements.spanTicker.className = '';
+  elements.spanTicker.classList.remove('removed');
 
   if (notify) {
     showNotification();
@@ -238,7 +243,8 @@ function startTimer() {
 
         elements.spanMins.innerText = hr;
         elements.spanSecs.innerText = mins;
-        elements.spanTicker.className = showDivider ? '' : 'hidden';
+        if (showDivider) elements.spanTicker.classList.remove('hidden');
+        else elements.spanTicker.classList.add('hidden');
 
         document.title = `Pomodoro [${hr}${showDivider ? ':' : ' '}${mins}]`;
       } catch (e) {
@@ -281,11 +287,20 @@ window.onload = function () {
   elements.timerResumeButton = document.getElementById('button-timer-resume');
   elements.timerResetButton = document.getElementById('button-timer-reset');
 
+  elements.imageRingAlarm = document.getElementById('img-ring-alarm');
+  elements.imageRingTick = document.getElementById('img-ring-tick');
+  if (alarmSounds.tickers[0] === 'None')
+    elements.imageRingTick.classList.add('removed');
+
   elements.headerPomo = document.getElementById('span-mode-pomo');
   elements.headerSBreak = document.getElementById('span-mode-sbreak');
   elements.headerLBreak = document.getElementById('span-mode-lbreak');
 
-  elements.spanRoundCounter = document.getElementById('span-round-count');
+  elements.spanPomoRoundCounter = document.getElementById('span-pomo-rounds');
+  elements.spanSBreakRoundCounter =
+    document.getElementById('span-sbreak-rounds');
+  elements.spanLBreakRoundCounter =
+    document.getElementById('span-lbreak-rounds');
 
   elements.settingInputPomoTime = document.getElementById(
     'input-setting-pomo-time'
@@ -390,17 +405,17 @@ window.onload = function () {
   state.notificationSupported = typeof Notification !== 'undefined';
   if (state.notificationSupported) {
     if (Notification.permission === 'default') {
-      elements.containerNotif.className = '';
-      elements.labelNotifError.className = 'removed';
+      elements.containerNotif.classList.remove('removed');
+      elements.labelNotifError.classList.add('removed');
     } else if (Notification.permission === 'denied') {
-      elements.containerNotif.className = '';
-      elements.labelNotifAsk.className = 'removed';
+      elements.containerNotif.classList.remove('removed');
+      elements.labelNotifAsk.classList.add('removed');
       elements.labelNotifError.innerText = `Browser notification disabled.
 Reminders won't be received`;
     }
   } else {
-    elements.containerNotif.className = '';
-    elements.labelNotifAsk.className = 'removed';
+    elements.containerNotif.classList.remove('removed');
+    elements.labelNotifAsk.classList.add('removed');
     elements.labelNotifError.value = `Browser does not supports notification.
 Reminders won't be received`;
 
@@ -422,11 +437,11 @@ function requestNotification() {
     Notification.requestPermission().then(function (permission) {
       console.log('requestNotification:', { permission });
       if (permission === 'granted') {
-        elements.containerNotif.className = 'removed';
+        elements.containerNotif.classList.add('removed');
       } else {
-        elements.containerNotif.className = '';
-        elements.labelNotifAsk.className = 'removed';
-        elements.labelNotifError.className = '';
+        elements.containerNotif.classList.remove('removed');
+        elements.labelNotifAsk.classList.add('removed');
+        elements.labelNotifError.classList.remove('removed');
         elements.labelNotifError.innerText = `Browser notification disabled.
 Reminders won't be received`;
         alert("Notification denied\nReminders won't be received!");
@@ -511,22 +526,21 @@ function test() {
   // elements.containerNotif.className = 'removed';
   // console.log('will start...');
   // setTimeout(() => {
-  showNotification();
-  return;
+  // showNotification();
   //   alert('notif shown');
   // }, 4000);
 
-  function waiter({ after = null }) {
-    console.log('starting...');
+  // function waiter({ after = null }) {
+  //   console.log('starting...');
 
-    setTimeout(function () {
-      console.log('done');
-      if (after) after();
-      return;
-    }, 2000);
+  //   setTimeout(function () {
+  //     console.log('done');
+  //     if (after) after();
+  //     return;
+  //   }, 2000);
 
-    console.log('ending...');
-  }
+  //   console.log('ending...');
+  // }
 
   // waiter({
   //   after: function () {
@@ -534,42 +548,44 @@ function test() {
   //   },
   // });
 
-  function waiter1(n) {
-    return new Promise(function (resolve, reject) {
-      if (n === 22) reject(new Error('custom outside'));
+  //   function waiter1(n) {
+  //     return new Promise(function (resolve, reject) {
+  //       if (n === 22) reject(new Error('custom outside'));
 
-      try {
-        if (n === 21) throw new Error('custom outside');
-      } catch (e) {
-        reject(e);
-      }
+  //       try {
+  //         if (n === 21) throw new Error('custom outside');
+  //       } catch (e) {
+  //         reject(e);
+  //       }
 
-      console.log('starting...');
-      setTimeout(function () {
-        if (n === 23) throw new Error('custom inside before');
+  //       console.log('starting...');
+  //       setTimeout(function () {
+  //         if (n === 23) throw new Error('custom inside before');
 
-        try {
-          if (n === 20) throw new Error('custom inside');
-          if (n === 27) reject(new Error('custom inside'));
+  //         try {
+  //           if (n === 20) throw new Error('custom inside');
+  //           if (n === 27) reject(new Error('custom inside'));
 
-          console.log('timer finished');
-          resolve(67);
-        } catch (e) {
-          reject(e);
-        }
-      }, 2000);
+  //           console.log('timer finished');
+  //           resolve(67);
+  //         } catch (e) {
+  //           reject(e);
+  //         }
+  //       }, 2000);
 
-      console.log('ending...');
-    });
-  }
+  //       console.log('ending...');
+  //     });
+  //   }
 
-  waiter1(27)
-    .then(function (retval) {
-      console.log('promise resolved', { retval });
-    })
-    .catch(function (error) {
-      console.log('promise rejected', { error });
-    });
+  //   waiter1(27)
+  //     .then(function (retval) {
+  //       console.log('promise resolved', { retval });
+  //     })
+  //     .catch(function (error) {
+  //       console.log('promise rejected', { error });
+  //     });
+  // }
+  console.log('test', { timer, rounds: state.rounds });
 }
 
 function showNotification() {
@@ -586,6 +602,35 @@ function showNotification() {
       window.parent.focus();
       notification.close();
     };
+  }
+}
+
+function onSpeakerClick(id) {
+  console.log('onSpeakerClick:', { id });
+
+  switch (id) {
+    case 'img-ring-alarm':
+      ring(elements.settingDropdownAlarmSounds.value, 1);
+      break;
+
+    case 'img-ring-tick':
+      ring(elements.settingDropdownTickingSounds.value, 1);
+      break;
+
+    default:
+      throw new Error('Unrecognized image ID: ' + id);
+  }
+}
+
+function onTickSoundValueChange(soundName) {
+  console.log('onTickSoundValueChange', { value: soundName });
+
+  if (soundName === alarmSounds.tickers[0]) {
+    audio?.pause();
+    elements.imageRingTick.classList.add('removed');
+  } else {
+    elements.imageRingTick.classList.remove('removed');
+    ring(soundName, 1);
   }
 }
 

@@ -1,4 +1,5 @@
 <html>
+
   <head>
     <title>Pomodoro</title>
     <link rel="icon" type="image/png" href="resources/images/pomo.png" />
@@ -7,7 +8,9 @@
   </head>
 
   <body>
-    <div id="container">
+    <div id="container-timer" class="container">
+      <h2>Timer</h2>
+
       <div id="container-notif" class="removed">
         <img src="resources/images/attention.webp" height="20px" />
         <label id="label-notif-ask">
@@ -18,137 +21,169 @@
         <label id="label-notif-error"></label>
       </div>
 
-      <div id="container-modes">
-        <span id="span-mode-pomo" onclick="setMode(modes.pomo)">
-          Pomodoro
-        </span>
-        <span id="span-mode-sbreak" onclick="setMode(modes.sbreak)">
-          Short Break
-        </span>
-        <span id="span-mode-lbreak" onclick="setMode(modes.lbreak)">
-          Long Break
-        </span>
+      <table>
+        <tr>
+          <th id="span-mode-pomo" onclick="setMode(modes.pomo)">Pomodoro</th>
+          <th id="span-mode-sbreak" onclick="setMode(modes.sbreak)">
+            Short Break
+          </th>
+          <th id="span-mode-lbreak" onclick="setMode(modes.lbreak)">
+            Long Break
+          </th>
+        </tr>
+        <tr>
+          <td colspan="3">
+            <span id="span-timer-mins"></span>
+            <span id="span-timer-ticker">:</span>
+            <span id="span-timer-secs"></span>
+          </td>
+        </tr>
+      </table>
+
+      <div id="container-buttons" class="flex-row">
+        <button id="button-timer-start" class="full-button" onclick="initiateTimer()">
+          Start
+        </button>
+        <button id="button-timer-pause" class="half-button" onclick="pauseTimer()">
+          Pause
+        </button>
+        <button id="button-timer-resume" class="half-button" onclick="resumeTimer()">
+          Resume
+        </button>
+        <button id="button-timer-reset" class="half-button" onclick="resetTimer()">
+          Reset
+        </button>
       </div>
 
-      <div id="container-timer">
-        <span id="span-timer-mins"></span>
-        <span id="span-timer-ticker">:</span>
-        <span id="span-timer-secs"></span>
-      </div>
-
-      <div id="container-buttons">
-        <button id="button-timer-start" onclick="initiateTimer()">START</button>
-        <button id="button-timer-pause" onclick="pauseTimer()">PAUSE</button>
-        <button id="button-timer-resume" onclick="resumeTimer()">RESUME</button>
-        <button id="button-timer-reset" onclick="resetTimer()">RESET</button>
-      </div>
-
-      <div>Round: <span id="span-round-count"> 1 </span></div>
-
-      <button onclick="test()">TEST</button>
+      <!-- <div>
+        <button onclick="test()" class="full-button">Test</button>
+      </div> -->
     </div>
 
-    <form id="form-settings">
-      <label>Settings</label>
+    <div id="container-report" class="container">
+      <h2>Report</h2>
+
+      <table>
+        <tr>
+          <th>Pomodoros</th>
+          <th>Short Breaks</th>
+          <th>Long Breaks</th>
+        </tr>
+        <tr>
+          <td class="centered">
+            <span id="span-pomo-rounds">1</span>
+            <h6>rounds</h6>
+          </td>
+          <td>
+            <span id="span-sbreak-rounds">2</span>
+            <h6>rounds</h6>
+          </td>
+          <td>
+            <span id="span-lbreak-rounds">3</span>
+            <h6>rounds</h6>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <form id="form-settings" class="container">
+      <h2>Settings</h2>
 
       <div>
         <table>
           <tr>
-            <td>Pomodoro</td>
-            <td>Short Break</td>
-            <td>Long Break</td>
+            <th>Pomodoro</th>
+            <th>Short Break</th>
+            <th>Long Break</th>
           </tr>
           <tr>
             <td>
-              <input
-                required
-                type="number"
-                id="input-setting-pomo-time"
-                min="1"
-                max="60"
-              />
-              mins
+              <input required type="number" id="input-setting-pomo-time" min="1" max="60" />
+              <h6>mins</h6>
             </td>
             <td>
-              <input
-                required
-                type="number"
-                id="input-setting-sbreak-time"
-                min="1"
-                max="60"
-              />
-              mins
+              <input required type="number" id="input-setting-sbreak-time" min="1" max="60" />
+              <h6>mins</h6>
             </td>
             <td>
-              <input
-                required
-                type="number"
-                id="input-setting-lbreak-time"
-                min="1"
-                max="60"
-              />
-              mins
+              <input required type="number" id="input-setting-lbreak-time" min="1" max="60" />
+              <h6>mins</h6>
             </td>
           </tr>
         </table>
 
-        <div>
-          <div>
-            <label for="checkbox-auto-start-breaks">Auto start breaks?</label>
-            <input type="checkbox" id="checkbox-auto-start-breaks" />
-          </div>
+        <table>
+          <tr>
+            <td class="left-aligned smaller-text">
+              <label for="checkbox-auto-start-breaks">Auto start breaks?</label>
+            </td>
+            <td class="right-aligned smaller-text">
+              <input type="checkbox" id="checkbox-auto-start-breaks" class="smaller-text" />
+            </td>
+          </tr>
 
-          <div>
-            <label for="checkbox-auto-start-pomo">Auto start Pomodoros?</label>
-            <input type="checkbox" id="checkbox-auto-start-pomos" />
-          </div>
+          <tr>
+            <td class="left-aligned smaller-text">
+              <label for="checkbox-auto-start-pomos">
+                Auto start Pomodoros?
+              </label>
+            </td>
+            <td class="right-aligned smaller-text">
+              <input type="checkbox" id="checkbox-auto-start-pomos" class="smaller-text" />
+            </td>
+          </tr>
 
-          <div>
-            <label for="select-alarm-sounds">Alarm Sound</label>
-            <select
-              id="select-alarm-sounds"
-              onchange="ring(this.value, 1)"
-            ></select>
-          </div>
+          <tr>
+            <td class="left-aligned smaller-text">
+              <label for="select-alarm-sounds">Alarm Sound</label>
+            </td>
+            <td class="right-aligned smaller-text">
+              <select id="select-alarm-sounds" onchange="ring(this.value, 1)" class="smaller-text"></select>
+              <img id="img-ring-alarm" src="resources/images/ring.png" alt="ring alarm" height="15px"
+                onclick="onSpeakerClick(this.id)" />
+            </td>
+          </tr>
 
-          <div>
-            <label for="input-alarm-repeat">Alarm Repeat</label>
-            <input
-              required
-              type="number"
-              id="input-alarm-repeat"
-              min="1"
-              max="10"
-            />
-          </div>
+          <tr>
+            <td class="left-aligned smaller-text">
+              <label for="input-alarm-repeat">Alarm Repeat</label>
+            </td>
+            <td class="right-aligned smaller-text">
+              <input required type="number" id="input-alarm-repeat" min="1" max="10" class="smaller-text" />
+              times
+            </td>
+          </tr>
 
-          <div>
-            <label for="select-ticking-sounds">Ticking Sound</label>
-            <select
-              id="select-ticking-sounds"
-              onchange="ring(this.value, 1)"
-            ></select>
-          </div>
+          <tr>
+            <td class="left-aligned smaller-text">
+              <label for="select-ticking-sounds">Ticking Sound</label>
+            </td>
+            <td class="right-aligned smaller-text">
+              <select id="select-ticking-sounds" onchange="onTickSoundValueChange(this.value)"
+                class="smaller-text"></select>
+              <img id="img-ring-tick" src="resources/images/ring.png" alt="ring tick" height="15px"
+                onclick="onSpeakerClick(this.id)" />
+            </td>
+          </tr>
 
-          <div>
-            <label>Notification</label>
-            <select id="select-notif-event"></select>
-            <input
-              required
-              type="number"
-              id="input-setting-notif-time"
-              min="1"
-              max="60"
-            />
-            <label> mins</label>
-          </div>
-        </div>
+          <tr>
+            <td class="left-aligned smaller-text">
+              <label>Notification</label>
+            </td>
+            <td class="right-aligned smaller-text">
+              <select id="select-notif-event" class="smaller-text"></select>
+              <input required type="number" id="input-setting-notif-time" min="1" max="60" class="smaller-text" />
+              mins
+            </td>
+          </tr>
+        </table>
       </div>
 
-      <div>
-        <input type="button" value="OK" onclick="saveSetting()" />
-        <input type="button" value="Reset" onclick="resetSetting()" />
+      <div class="flex-row">
+        <input type="button" class="half-button" value="OK" onclick="saveSetting()" />
+        <input type="button" class="half-button" value="Reset" onclick="resetSetting()" />
       </div>
     </form>
   </body>
+
 </html>

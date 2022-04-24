@@ -2,6 +2,7 @@ const modes = ['pomo', 'sbreak', 'lbreak'];
 
 const state = {
   notificationSupported: null,
+  pomodoroRounds: 0,
 };
 
 const elements = {};
@@ -48,7 +49,10 @@ const settings = {
       lbreak: 15 * 60,
       test: 10, // TODO: Remove this, for testing purpose only}
     },
-    autoStartBreaks: true,
+    autoStart: {
+      breaks: true,
+      pomos: true,
+    },
     alarmSound: alarmSounds.pomo[0],
     alarmRepeatCount: 1,
     tickingSound: alarmSounds.tickers[0],
@@ -234,6 +238,10 @@ window.onload = () => {
     'checkbox-auto-start-breaks'
   );
 
+  elements.settingCheckboxAutoStartPomos = document.getElementById(
+    'checkbox-auto-start-pomos'
+  );
+
   elements.settingDropdownAlarmSounds = document.getElementById(
     'select-alarm-sounds'
   );
@@ -289,7 +297,10 @@ window.onload = () => {
   });
 
   elements.settingCheckboxAutoStartBreaks.checked =
-    settings.custom.autoStartBreaks;
+    settings.custom.autoStart.breaks;
+
+  elements.settingCheckboxAutoStartPomos.checked =
+    settings.custom.autoStart.pomos;
 
   elements.settingInputNotifTime.value =
     settings.custom.notification.timeInMins;
@@ -297,9 +308,10 @@ window.onload = () => {
   // state.notification.supported = typeof Notification !== 'undefined';
   // if (!state.notification.supported)
 
-  /* Set inital mode */
+  /* Set initial mode */
   setMode('pomo');
 
+  /* checking for browser notification */
   console.log(
     'notif perm:',
     Notification.permission,
@@ -362,7 +374,10 @@ function saveSetting() {
       sbreak: +elements.settingInputSBreakTime.value * 60,
       lbreak: +elements.settingInputLBreakTime.value * 60,
     },
-    autoStartBreaks: elements.settingCheckboxAutoStartBreaks.checked,
+    autoStart: {
+      breaks: elements.settingCheckboxAutoStartBreaks.checked,
+      pomos: elements.settingCheckboxAutoStartPomos.checked,
+    },
     alarmSound: elements.settingDropdownAlarmSounds.value,
     alarmRepeatCount: +elements.settingInputAlarmRepeat.value,
     tickingSound: elements.settingDropdownTickingSounds.value,
@@ -389,7 +404,9 @@ function resetSetting() {
     settings.default.times.lbreak / 60
   );
   elements.settingCheckboxAutoStartBreaks.checked =
-    settings.default.autoStartBreaks;
+    settings.default.autoStart.breaks;
+  elements.settingCheckboxAutoStartPomos.checked =
+    settings.default.autoStart.pomos;
   elements.settingDropdownAlarmSounds.value = settings.default.alarmSound;
   elements.settingInputAlarmRepeat.value = settings.default.alarmRepeatCount;
   elements.settingDropdownTickingSounds.value = settings.default.tickingSound;

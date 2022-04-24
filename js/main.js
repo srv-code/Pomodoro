@@ -257,7 +257,7 @@ function startTimer() {
   // updateButtonVisibilities('start');
 }
 
-function initiateTimer() {
+function initializeTimer() {
   console.log({ timer });
   updateButtonVisibilities('start');
 

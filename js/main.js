@@ -1,11 +1,44 @@
-const modes = ['pomo', 'sbreak', 'lbreak'];
+const modes = {
+  pomo: 'pomo',
+  sbreak: 'sbreak',
+  lbreak: 'lbreak',
+};
 
 const state = {
   notificationSupported: null,
-  pomodoroRounds: 0,
+  rounds: {
+    pomos: 0,
+    breaks: 0,
+    lbreaks: 0,
+  },
 };
 
-const elements = {};
+const elements = {
+  containerNotif: null,
+  labelNotifAsk: null,
+  labelNotifError: null,
+  spanMins: null,
+  spanSecs: null,
+  spanTicker: null,
+  timerStartButton: null,
+  timerPauseButton: null,
+  timerResumeButton: null,
+  timerResetButton: null,
+  headerPomo: null,
+  headerSBreak: null,
+  headerLBreak: null,
+  spanRoundCounter: null,
+  settingInputPomoTime: null,
+  settingInputSBreakTime: null,
+  settingInputLBreakTime: null,
+  settingInputNotifTime: null,
+  settingInputAlarmRepeat: null,
+  settingCheckboxAutoStartBreaks: null,
+  settingCheckboxAutoStartPomos: null,
+  settingDropdownAlarmSounds: null,
+  settingDropdownTickingSounds: null,
+  settingDropdownNotifEvent: null,
+};
 
 const alarmSounds = {
   pomo: [
@@ -47,7 +80,7 @@ const settings = {
       pomo: 25 * 60,
       sbreak: 5 * 60,
       lbreak: 15 * 60,
-      test: 10, // TODO: Remove this, for testing purpose only}
+      test: 5, // TODO: Remove this, for testing purpose only}
     },
     autoStart: {
       breaks: true,
@@ -65,7 +98,9 @@ const settings = {
 };
 
 function setMode(mode) {
-  if (modes.includes(mode)) {
+  console.log('setMode', { mode });
+
+  if (mode in modes) {
     timer.mode = mode;
     timer.secs = settings.custom.times.test; // TODO: Remove this, for testing purpose only
     // timer.secs = defaultTimerSettings[mode]; // TODO: Enable this
@@ -83,9 +118,9 @@ function setMode(mode) {
     ].forEach(x => {
       x.element.className = mode === x.mode ? 'highlighted-mode' : '';
     });
-  } else throw new Error('Invalid mode: ' + mode);
 
-  updateButtonVisibilities('reset');
+    updateButtonVisibilities('reset');
+  } else throw new Error('Invalid mode: ' + mode);
 }
 
 function updateButtonVisibilities(state) {
@@ -130,71 +165,104 @@ function updateButtonVisibilities(state) {
   }
 }
 
-function clearTimer(timerCompleted = false) {
+function clearTimer({ reset = false, notify = false } = {}) {
   clearInterval(timer.tick);
-
   timer.tick = null;
-  timer.mode = null;
-  timer.secs = null;
+
+  if (reset) {
+    timer.mode = null;
+    timer.secs = null;
+  }
 
   elements.spanTicker.className = '';
 
-  if (timerCompleted) {
+  if (notify) {
     showNotification();
     ring(settings.custom.alarmSound, settings.custom.alarmRepeatCount);
   }
-
-  document.title = `Pomodoro`;
-
-  updateButtonVisibilities('reset');
 }
 
 function pauseTimer() {
+  clearTimer();
   updateButtonVisibilities('pause');
+  document.title = 'Pomodoro [PAUSED]';
 }
 
 function resumeTimer() {
   updateButtonVisibilities('resume');
+
+  startTimer()
+    .then(function () {
+      updateButtonVisibilities('reset');
+    })
+    .catch(function (e) {
+      alert('Internal Error Occurred\n' + e.message);
+      throw e;
+    });
 }
 
 function resetTimer() {
+  clearTimer({ reset: true });
   updateButtonVisibilities('reset');
+  document.title = 'Pomodoro';
 }
 
-// function stopTimer() {
-//   if (confirm('Reset Timer?')) {clearTimer();
-
-//   }
-// }
-
 function startTimer() {
-  timer.tick = setInterval(function updateTicker() {
-    timer.secs -= 1;
+  return new Promise(function (resolve, reject) {
+    timer.tick = setInterval(function () {
+      try {
+        if (timer.secs === null || timer.secs === undefined)
+          throw new Error('Invalid timer.secs: ' + timer.secs);
 
-    if (timer.secs === 0) clearTimer(true);
+        timer.secs -= 1;
 
-    console.log('time:', {
-      mins: Math.floor(timer.secs / 60)
-        .toString()
-        .padStart(2, '0'),
-      secs: (timer.secs % 60).toString().padStart(2, '0'),
-      showTicker: !!(timer.secs % 2),
-    });
+        if (timer.secs === 0) {
+          clearTimer({ reset: true, notify: true });
+          document.title = 'Pomodoro';
+          updateButtonVisibilities('reset');
+        } else if (timer.secs < 0) throw new Error('Invalid timer.secs: ' + timer.secs);
 
-    const hr = Math.floor(timer.secs / 60)
-      .toString()
-      .padStart(2, '0');
-    const mins = (timer.secs % 60).toString().padStart(2, '0');
-    const showDivider = timer.secs % 2 ? 'hidden' : '';
+        console.log('time:', {
+          mins: Math.floor(timer.secs / 60)
+            .toString()
+            .padStart(2, '0'),
+          secs: (timer.secs % 60).toString().padStart(2, '0'),
+          showTicker: timer.secs % 2 !== 0,
+        });
 
-    elements.spanMins.innerText = hr;
-    elements.spanSecs.innerText = mins;
-    elements.spanTicker.className = showDivider;
+        const hr = Math.floor(timer.secs / 60)
+          .toString()
+          .padStart(2, '0');
+        const mins = (timer.secs % 60).toString().padStart(2, '0');
+        const showDivider = timer.secs % 2 === 0;
 
-    document.title = `Pomodoro [${hr}${showDivider ? ':' : ' '}${mins}]`;
-  }, 1000);
+        elements.spanMins.innerText = hr;
+        elements.spanSecs.innerText = mins;
+        elements.spanTicker.className = showDivider ? '' : 'hidden';
 
+        document.title = `Pomodoro [${hr}${showDivider ? ':' : ' '}${mins}]`;
+      } catch (e) {
+        clearInterval(timer.tick);
+        reject(e);
+      }
+    }, 1000);
+  });
+
+  // updateButtonVisibilities('start');
+}
+
+function initiateTimer() {
+  console.log({ timer });
   updateButtonVisibilities('start');
+
+  startTimer()
+    .then(function () {
+      updateButtonVisibilities('reset');
+    })
+    .catch(function (e) {
+      alert('Internal Error Occurred\n' + e.message);
+      throw e;
+    });
 }
 
 window.onload = function () {
@@ -309,7 +377,7 @@ window.onload = function () {
   // if (!state.notification.supported)
 
   /* Set initial mode */
-  setMode('pomo');
+  setMode(modes.pomo);
 
   /* checking for browser notification */
   console.log(
@@ -443,13 +511,74 @@ function test() {
   // elements.containerNotif.className = 'removed';
   // console.log('will start...');
   // setTimeout(() => {
-  // showNotification();
+  showNotification();
+  return;
   //   alert('notif shown');
   // }, 4000);
+
+  function waiter({ after = null }) {
+    console.log('starting...');
+
+    setTimeout(function () {
+      console.log('done');
+      if (after) after();
+      return;
+    }, 2000);
+
+    console.log('ending...');
+  }
+
+  // waiter({
+  //   after: function () {
+  //     console.log('timer finished');
+  //   },
+  // });
+
+  function waiter1(n) {
+    return new Promise(function (resolve, reject) {
+      if (n === 22) reject(new Error('custom outside'));
+
+      try {
+        if (n === 21) throw new Error('custom outside');
+      } catch (e) {
+        reject(e);
+      }
+
+      console.log('starting...');
+      setTimeout(function () {
+        if (n === 23) throw new Error('custom inside before');
+
+        try {
+          if (n === 20) throw new Error('custom inside');
+          if (n === 27) reject(new Error('custom inside'));
+
+          console.log('timer finished');
+          resolve(67);
+        } catch (e) {
+          reject(e);
+        }
+      }, 2000);
+
+      console.log('ending...');
+    });
+  }
+
+  waiter1(27)
+    .then(function (retval) {
+      console.log('promise resolved', { retval });
+    })
+    .catch(function (error) {
+      console.log('promise rejected', { error });
+    });
 }
 
 function showNotification() {
-  if (document.visibilityState !== 'visible' && state.notification.permitted) {
+  if (
+    // document.visibilityState !== 'visible' &&
+    // state.notificationSupported &&
+    // Notification.permission === 'granted'
+    1
+  ) {
     const notification = new Notification('Pomodoro', {
       body: 'Timer is up',
       icon: 'resources/images/pomo.png',

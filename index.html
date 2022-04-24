@@ -19,11 +19,13 @@
       </div>
 
       <div id="container-modes">
-        <span id="span-mode-pomo" onclick="setMode('pomo')"> Pomodoro </span>
-        <span id="span-mode-sbreak" onclick="setMode('sbreak')">
+        <span id="span-mode-pomo" onclick="setMode(modes.pomo)">
+          Pomodoro
+        </span>
+        <span id="span-mode-sbreak" onclick="setMode(modes.sbreak)">
           Short Break
         </span>
-        <span id="span-mode-lbreak" onclick="setMode('lbreak')">
+        <span id="span-mode-lbreak" onclick="setMode(modes.lbreak)">
           Long Break
         </span>
       </div>
@@ -35,7 +37,7 @@
       </div>
 
       <div id="container-buttons">
-        <button id="button-timer-start" onclick="startTimer()">START</button>
+        <button id="button-timer-start" onclick="initiateTimer()">START</button>
         <button id="button-timer-pause" onclick="pauseTimer()">PAUSE</button>
         <button id="button-timer-resume" onclick="resumeTimer()">RESUME</button>
         <button id="button-timer-reset" onclick="resetTimer()">RESET</button>

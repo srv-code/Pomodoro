@@ -223,8 +223,9 @@ function startTimer() {
 
         if (timer.secs === 0) {
           clearTimer({ reset: true, notify: true });
-          document.title = 'Pomodoro';
-          updateButtonVisibilities('reset');
+          resolve(null);
+          // document.title = 'Pomodoro';
+          // updateButtonVisibilities('reset');
         } else if (timer.secs < 0) throw new Error('Invalid timer.secs: ' + timer.secs);
 
         console.log('time:', {
@@ -264,6 +265,8 @@ function initializeTimer() {
   startTimer()
     .then(function () {
       updateButtonVisibilities('reset');
+      console.log('changing doc title...');
+      document.title = 'Pomodoro';
     })
     .catch(function (e) {
       alert('Internal Error Occurred\n' + e.message);

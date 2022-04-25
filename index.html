@@ -1,5 +1,4 @@
 <html>
-
   <head>
     <title>Pomodoro</title>
     <link rel="icon" type="image/png" href="resources/images/pomo.png" />
@@ -8,18 +7,30 @@
   </head>
 
   <body>
+    <div id="container-notif-warning" class="removed">
+      <table>
+        <tr>
+          <td>
+            <img
+              id="img-notif-warn"
+              src="resources/images/attention.webp"
+              height="32px"
+            />
+          </td>
+          <td>
+            <label id="label-notif-ask">
+              Please
+              <a href="#" onclick="requestNotification()">enable</a>
+              notifications to receive reminders
+            </label>
+            <label id="label-notif-error"></label>
+          </td>
+        </tr>
+      </table>
+    </div>
+
     <div id="container-timer" class="container">
       <h2>Timer</h2>
-
-      <div id="container-notif" class="removed">
-        <img src="resources/images/attention.webp" height="20px" />
-        <label id="label-notif-ask">
-          Please
-          <a href="#" onclick="requestNotification()">enable</a>
-          notifications to receive reminders
-        </label>
-        <label id="label-notif-error"></label>
-      </div>
 
       <table>
         <tr>
@@ -46,16 +57,33 @@
       </table>
 
       <div id="container-buttons" class="flex-row">
-        <button id="button-timer-start" class="full-button" autofocus onclick="initializeTimer()">
+        <button
+          id="button-timer-start"
+          class="full-button"
+          autofocus
+          onclick="initializeTimer()"
+        >
           Start
         </button>
-        <button id="button-timer-pause" class="half-button" onclick="pauseTimer()">
+        <button
+          id="button-timer-pause"
+          class="half-button"
+          onclick="pauseTimer()"
+        >
           Pause
         </button>
-        <button id="button-timer-resume" class="half-button" onclick="resumeTimer()">
+        <button
+          id="button-timer-resume"
+          class="half-button"
+          onclick="resumeTimer()"
+        >
           Resume
         </button>
-        <button id="button-timer-reset" class="half-button" onclick="resetTimer()">
+        <button
+          id="button-timer-reset"
+          class="half-button"
+          onclick="resetTimer()"
+        >
           Reset
         </button>
       </div>
@@ -65,9 +93,7 @@
       </button>
 
       <div>
-        <!-- <button onclick="test()" class="full-button">
-          Test
-        </button> -->
+        <button onclick="test()" class="tester full-button">Test</button>
       </div>
     </div>
 
@@ -109,15 +135,33 @@
           </tr>
           <tr>
             <td>
-              <input required type="number" id="input-setting-pomo-time" min="1" max="60" />
+              <input
+                required
+                type="number"
+                id="input-setting-pomo-time"
+                min="1"
+                max="60"
+              />
               <h6>mins</h6>
             </td>
             <td>
-              <input required type="number" id="input-setting-sbreak-time" min="1" max="60" />
+              <input
+                required
+                type="number"
+                id="input-setting-sbreak-time"
+                min="1"
+                max="60"
+              />
               <h6>mins</h6>
             </td>
             <td>
-              <input required type="number" id="input-setting-lbreak-time" min="1" max="60" />
+              <input
+                required
+                type="number"
+                id="input-setting-lbreak-time"
+                min="1"
+                max="60"
+              />
               <h6>mins</h6>
             </td>
           </tr>
@@ -129,7 +173,11 @@
               <label for="checkbox-auto-start-breaks">Auto start breaks?</label>
             </td>
             <td class="right-aligned smaller-text">
-              <input type="checkbox" id="checkbox-auto-start-breaks" class="smaller-text" />
+              <input
+                type="checkbox"
+                id="checkbox-auto-start-breaks"
+                class="smaller-text"
+              />
             </td>
           </tr>
 
@@ -140,7 +188,11 @@
               </label>
             </td>
             <td class="right-aligned smaller-text">
-              <input type="checkbox" id="checkbox-auto-start-pomos" class="smaller-text" />
+              <input
+                type="checkbox"
+                id="checkbox-auto-start-pomos"
+                class="smaller-text"
+              />
             </td>
           </tr>
 
@@ -149,9 +201,18 @@
               <label for="select-alarm-sounds">Alarm Sound</label>
             </td>
             <td class="right-aligned smaller-text">
-              <select id="select-alarm-sounds" onchange="ring(this.value, 1)" class="smaller-text"></select>
-              <img id="img-ring-alarm" src="resources/images/ring.png" alt="ring alarm" height="15px"
-                onclick="onSpeakerClick(this.id)" />
+              <select
+                id="select-alarm-sounds"
+                onchange="ring(this.value, 1)"
+                class="smaller-text"
+              ></select>
+              <img
+                id="img-ring-alarm"
+                src="resources/images/ring.png"
+                alt="ring alarm"
+                height="15px"
+                onclick="onSpeakerClick(this.id)"
+              />
             </td>
           </tr>
 
@@ -160,7 +221,14 @@
               <label for="input-alarm-repeat">Alarm Repeat</label>
             </td>
             <td class="right-aligned smaller-text">
-              <input required type="number" id="input-alarm-repeat" min="1" max="10" class="smaller-text" />
+              <input
+                required
+                type="number"
+                id="input-alarm-repeat"
+                min="1"
+                max="10"
+                class="smaller-text"
+              />
               times
             </td>
           </tr>
@@ -170,10 +238,18 @@
               <label for="select-ticking-sounds">Ticking Sound</label>
             </td>
             <td class="right-aligned smaller-text">
-              <select id="select-ticking-sounds" onchange="onTickSoundValueChange(this.value)"
-                class="smaller-text"></select>
-              <img id="img-ring-tick" src="resources/images/ring.png" alt="ring tick" height="15px"
-                onclick="onSpeakerClick(this.id)" />
+              <select
+                id="select-ticking-sounds"
+                onchange="onTickSoundValueChange(this.value)"
+                class="smaller-text"
+              ></select>
+              <img
+                id="img-ring-tick"
+                src="resources/images/ring.png"
+                alt="ring tick"
+                height="15px"
+                onclick="onSpeakerClick(this.id)"
+              />
             </td>
           </tr>
 
@@ -183,7 +259,14 @@
             </td>
             <td class="right-aligned smaller-text">
               <select id="select-notif-event" class="smaller-text"></select>
-              <input required type="number" id="input-setting-notif-time" min="1" max="60" class="smaller-text" />
+              <input
+                required
+                type="number"
+                id="input-setting-notif-time"
+                min="1"
+                max="60"
+                class="smaller-text"
+              />
               mins
             </td>
           </tr>
@@ -191,10 +274,19 @@
       </div>
 
       <div class="flex-row">
-        <input type="button" class="half-button" value="OK" onclick="saveSetting()" />
-        <input type="button" class="half-button" value="Reset" onclick="resetSetting()" />
+        <input
+          type="button"
+          class="half-button"
+          value="OK"
+          onclick="saveSetting()"
+        />
+        <input
+          type="button"
+          class="half-button"
+          value="Reset"
+          onclick="resetSetting()"
+        />
       </div>
     </form>
   </body>
-
 </html>

@@ -82,6 +82,24 @@
   height: 10px;
 }
 
+#container-notif-warning {
+  /* display: flex; */
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  /* top: 10px;
+  left: 50%; */
+  align-items: center;
+  /* align-content: center; */
+  /* justify-content: space-between; */
+  background-color: rgb(231, 101, 101);
+  color: rgb(209, 241, 209);
+  border-radius: 5px;
+  /* vertical-align: middle; */
+  box-shadow: 2px 2px 8px #888888;
+  padding: 5px 10px;
+}
+
 body {
   /* padding: 10px; */
   background-color: rgb(9, 196, 196);
@@ -110,6 +128,11 @@ th {
 
 .smaller-text {
   font-size: 12px;
+}
+
+.tester {
+  background-color: olive;
+  color: white;
 }
 
 td {

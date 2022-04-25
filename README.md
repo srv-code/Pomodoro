@@ -18,6 +18,8 @@ A replica of the [Pomofocus](https://pomofocus.io/) application
 - [ ] Implement Skip button functionality
 - [x] Implement progress bar for timer
 - [ ] Should flash time '00:00' after timer expires for 5 secs (same time as it holds)
+- [ ] Implement ticker sound
+- [ ] Implement a way to detect if the settings changes are unsaved and show in a label
 
 ### Bug Fixes
 
@@ -25,7 +27,9 @@ A replica of the [Pomofocus](https://pomofocus.io/) application
 - [x] Title timer is not going away after timer finishes running
 - [ ] Can submit settings form with any errors
 - [x] Starts the timer with 1s less than specified
+- [ ] Implement classList.toggle than classList.(add|remove) wherever suitable
 
 ### Test Cases
 
 - [ ] Check after inputting invalid setting values
+- [ ] Check how the notification info panel looks like in the new style scheme

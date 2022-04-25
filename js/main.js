@@ -15,7 +15,7 @@ const state = {
 };
 
 const elements = {
-  containerNotif: null,
+  containerNotifWarning: null,
   labelNotifAsk: null,
   labelNotifError: null,
   spanMins: null,
@@ -305,7 +305,9 @@ function cleanupAfterTimerStops(updateRounds) {
 
 window.onload = function () {
   /* Cache all HTML elements */
-  elements.containerNotif = document.getElementById('container-notif');
+  elements.containerNotifWarning = document.getElementById(
+    'container-notif-warning'
+  );
 
   elements.labelNotifAsk = document.getElementById('label-notif-ask');
   elements.labelNotifError = document.getElementById('label-notif-error');
@@ -441,25 +443,27 @@ window.onload = function () {
   state.notificationSupported = typeof Notification !== 'undefined';
   if (state.notificationSupported) {
     if (Notification.permission === 'default') {
-      elements.containerNotif.classList.remove('removed');
+      elements.containerNotifWarning.classList.remove('removed');
       elements.labelNotifError.classList.add('removed');
     } else if (Notification.permission === 'denied') {
-      elements.containerNotif.classList.remove('removed');
+      elements.containerNotifWarning.classList.remove('removed');
       elements.labelNotifAsk.classList.add('removed');
-      elements.labelNotifError.innerText = `Browser notification disabled.
-Reminders won't be received`;
+      elements.labelNotifError.innerText = `Browser notification disabled
+Reminders won't be received!`;
     }
+    // else if (Notification.permission === 'granted')
+    //   elements.containerNotifWarning.classList.add('removed');
   } else {
-    elements.containerNotif.classList.remove('removed');
+    elements.containerNotifWarning.classList.remove('removed');
     elements.labelNotifAsk.classList.add('removed');
-    elements.labelNotifError.value = `Browser does not supports notification.
-Reminders won't be received`;
+    elements.labelNotifError.innerText = `Browser does not supports notification
+Reminders won't be received!`;
 
-    alert(
-      `Browser incompatibility:
-Your browser does not support notifications.
-Reminders won't be shown!`
-    );
+    //     alert(
+    //       `Browser incompatibility:
+    // Your browser does not support notifications.
+    // Reminders won't be shown!`
+    //     );
   }
 };
 
@@ -472,15 +476,15 @@ function requestNotification() {
   if (state.notificationSupported) {
     Notification.requestPermission().then(function (permission) {
       console.log('requestNotification:', { permission });
-      if (permission === 'granted') {
-        elements.containerNotif.classList.add('removed');
-      } else {
-        elements.containerNotif.classList.remove('removed');
+      if (permission === 'granted')
+        elements.containerNotifWarning.classList.add('removed');
+      else {
+        elements.containerNotifWarning.classList.remove('removed');
         elements.labelNotifAsk.classList.add('removed');
         elements.labelNotifError.classList.remove('removed');
-        elements.labelNotifError.innerText = `Browser notification disabled.
-Reminders won't be received`;
-        alert("Notification denied\nReminders won't be received!");
+        elements.labelNotifError.innerText = `Browser notification disabled
+Reminders won't be received!`;
+        // alert("Notification denied\nReminders won't be received!");
       }
     });
   }

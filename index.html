@@ -38,6 +38,11 @@
             <span id="span-timer-secs"></span>
           </td>
         </tr>
+        <tr>
+          <td colspan="3">
+            <progress id="progress-timer" value="0" max="0"></progress>
+          </td>
+        </tr>
       </table>
 
       <div id="container-buttons" class="flex-row">
@@ -55,8 +60,14 @@
         </button>
       </div>
 
+      <button id="button-skip-round" class="full-button" onclick="skipRound()">
+        Skip
+      </button>
+
       <div>
-        <button onclick="test()" class="full-button">Test</button>
+        <!-- <button onclick="test()" class="full-button">
+          Test
+        </button> -->
       </div>
     </div>
 

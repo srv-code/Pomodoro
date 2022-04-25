@@ -15,6 +15,9 @@ A replica of the [Pomofocus](https://pomofocus.io/) application
 - [x] Store the settings using cookies / localStorage
 - [x] Update report with counts
 - [ ] Implement the feature of auto-starting breaks (short & long) & Pomodoros
+- [ ] Implement Skip button functionality
+- [x] Implement progress bar for timer
+- [ ] Should flash time '00:00' after timer expires for 5 secs (same time as it holds)
 
 ### Bug Fixes
 

@@ -21,6 +21,7 @@ const elements = {
   spanMins: null,
   spanSecs: null,
   spanTicker: null,
+  progressTimer: null,
   timerStartButton: null,
   timerPauseButton: null,
   timerResumeButton: null,
@@ -85,7 +86,7 @@ const settings = {
       pomo: 25 * 60,
       sbreak: 5 * 60,
       lbreak: 15 * 60,
-      test: 3, // TODO: Remove this, for testing purpose only}
+      test: 10, // TODO: Remove this, for testing purpose only}
     },
     autoStart: {
       breaks: true,
@@ -109,13 +110,16 @@ function setMode(mode) {
     state.selectedMode = mode;
     timer.mode = mode;
     timer.secs = settings.custom.times.test; // TODO: Remove this, for testing purpose only
-    // timer.secs = defaultTimerSettings[mode]; // TODO: Enable this
+    // timer.secs = settings.custom.times[mode]; // TODO: Enable this
+
+    elements.progressTimer.value = timer.secs;
+    elements.progressTimer.max = timer.secs;
 
     elements.spanMins.innerText = Math.floor(timer.secs / 60)
       .toString()
       .padStart(2, '0');
     elements.spanSecs.innerText = (timer.secs % 60).toString().padStart(2, '0');
-    elements.spanTicker.classList.remove('removed');
+    elements.spanTicker.classList.remove('hidden');
 
     [
       { mode: 'pomo', element: elements.headerPomo },
@@ -181,7 +185,7 @@ function clearTimer({ reset = false, notify = false } = {}) {
     timer.secs = null;
   }
 
-  elements.spanTicker.classList.remove('removed');
+  elements.spanTicker.classList.remove('hidden');
 
   if (notify) {
     showNotification();
@@ -200,7 +204,7 @@ function resumeTimer() {
 
   startTimer()
     .then(function () {
-      updateButtonVisibilities('reset');
+      cleanupAfterTimerStops(true);
     })
     .catch(function (e) {
       alert('Internal Error Occurred\n' + e.message);
@@ -210,8 +214,7 @@ function resumeTimer() {
 
 function resetTimer() {
   clearTimer({ reset: true });
-  updateButtonVisibilities('reset');
-  document.title = 'Pomodoro';
+  cleanupAfterTimerStops(false);
 }
 
 function startTimer() {
@@ -220,6 +223,8 @@ function startTimer() {
       try {
         if (timer.secs === null || timer.secs === undefined)
           throw new Error('Invalid timer.secs: ' + timer.secs);
+
+        elements.progressTimer.value = timer.secs;
 
         if (timer.secs === 0) {
           clearTimer({ reset: true, notify: true });
@@ -247,7 +252,7 @@ function startTimer() {
         if (showDivider) elements.spanTicker.classList.remove('hidden');
         else elements.spanTicker.classList.add('hidden');
 
-        document.title = `Pomodoro [${hr}${showDivider ? ':' : ' '}${mins}]`;
+        document.title = `Pomodoro - ${hr}${showDivider ? ':' : ' '}${mins}`;
 
         timer.secs -= 1;
       } catch (e) {
@@ -260,21 +265,16 @@ function startTimer() {
   // updateButtonVisibilities('start');
 }
 
+function skipRound() {}
+
 function initializeTimer() {
   console.log({ timer });
-
-  if (!timer.mode) setMode(state.selectedMode);
 
   updateButtonVisibilities('start');
 
   startTimer()
     .then(function () {
-      updateButtonVisibilities('reset');
-
-      document.title = 'Pomodoro';
-
-      state.rounds[state.selectedMode]++;
-      updateRoundCounters();
+      cleanupAfterTimerStops(true);
     })
     .catch(function (e) {
       alert('Internal Error Occurred\n' + e.message);
@@ -288,6 +288,21 @@ function updateRoundCounters() {
   elements.spanLBreakRoundCounter.innerText = state.rounds[modes.lbreak];
 }
 
+function cleanupAfterTimerStops(updateRounds) {
+  updateButtonVisibilities('reset');
+
+  document.title = 'Pomodoro';
+
+  if (updateRounds) {
+    state.rounds[state.selectedMode]++;
+    updateRoundCounters();
+
+    setTimeout(function () {
+      setMode(state.selectedMode);
+    }, 5000);
+  }
+}
+
 window.onload = function () {
   /* Cache all HTML elements */
   elements.containerNotif = document.getElementById('container-notif');
@@ -298,6 +313,8 @@ window.onload = function () {
   elements.spanMins = document.getElementById('span-timer-mins');
   elements.spanSecs = document.getElementById('span-timer-secs');
   elements.spanTicker = document.getElementById('span-timer-ticker');
+
+  elements.progressTimer = document.getElementById('progress-timer');
 
   elements.timerStartButton = document.getElementById('button-timer-start');
   elements.timerPauseButton = document.getElementById('button-timer-pause');
@@ -604,7 +621,7 @@ function test() {
   //       console.log('promise rejected', { error });
   //     });
   // }
-  console.log('test', { timer, rounds: state.rounds });
+  console.log('test', { timer, state });
 }
 
 function showNotification() {

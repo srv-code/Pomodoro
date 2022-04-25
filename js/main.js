@@ -7,6 +7,7 @@ const modes = {
 };
 
 const state = {
+  isTimerRunning: false,
   notificationSupported: null,
   selectedMode: null,
   stopFlashingTime: null,
@@ -30,6 +31,7 @@ const elements = {
   timerPauseButton: null,
   timerResumeButton: null,
   timerResetButton: null,
+  timerSkipButton: null,
   imageRingAlarm: null,
   imageRingTick: null,
   headerPomo: null,
@@ -72,7 +74,7 @@ const alarmSounds = {
     'Whistle.wav',
     'Yeehaw.wav',
   ],
-  tickers: ['None', 'Clock Ticking 2 short.wav', 'Clock Ticking 2.wav'],
+  tickers: ['None', 'Clock Ticking.wav'],
 };
 
 const notificationEvents = ['Last', 'Every'];
@@ -113,23 +115,41 @@ function reportInternalError(e) {
   throw e;
 }
 
+function updateTimer(reset) {
+  timer.mode = reset ? null : state.selectedMode;
+  timer.secs = reset ? null : settings.custom.times.test; // TODO: Remove this, for testing purpose only
+  // timer.secs =  reset ? null :settings.custom.times[mode]; // TODO: Enable this
+
+  elements.progressTimer.value = timer.secs ?? 0;
+  elements.progressTimer.max = timer.secs ?? 0;
+
+  elements.spanMins.innerText = Math.floor((timer.secs ?? 0) / 60)
+    .toString()
+    .padStart(2, '0');
+  elements.spanSecs.innerText = ((timer.secs ?? 0) % 60)
+    .toString()
+    .padStart(2, '0');
+  elements.spanTicker.classList.remove('hidden');
+}
+
 function setMode(mode) {
-  console.log('setMode', { mode });
+  console.log('setMode', { mode, sameMode: mode === state.selectedMode });
 
   if (mode in modes) {
+    if (mode === state.selectedMode) return;
+    else {
+      if (state.isTimerRunning) {
+        if (confirm('Timer is currently running.\nSure to stop it?')) {
+          resetTimer();
+        } else return;
+      }
+    }
+
+    state.stopFlashingTime?.();
+
     state.selectedMode = mode;
-    timer.mode = mode;
-    timer.secs = settings.custom.times.test; // TODO: Remove this, for testing purpose only
-    // timer.secs = settings.custom.times[mode]; // TODO: Enable this
 
-    elements.progressTimer.value = timer.secs;
-    elements.progressTimer.max = timer.secs;
-
-    elements.spanMins.innerText = Math.floor(timer.secs / 60)
-      .toString()
-      .padStart(2, '0');
-    elements.spanSecs.innerText = (timer.secs % 60).toString().padStart(2, '0');
-    elements.spanTicker.classList.remove('hidden');
+    updateTimer();
 
     [
       { mode: 'pomo', element: elements.headerPomo },
@@ -192,15 +212,14 @@ function clearTimer({
   flashTimeIndefinitely = false,
   notify = false,
 } = {}) {
+  state.isTimerRunning = false;
+
   return new Promise(function (resolve, reject) {
     try {
       clearInterval(timer.tick);
       timer.tick = null;
 
-      if (reset) {
-        timer.mode = null;
-        timer.secs = null;
-      }
+      if (reset) updateTimer(true);
 
       elements.spanTicker.classList.remove('hidden');
 
@@ -213,27 +232,34 @@ function clearTimer({
         if (reset) document.title = docTitleStaticPart + ' [FINISHED]';
 
         let count = 0,
-          docTitle = [document.title, docTitleStaticPart];
-        const flashTimer = setInterval(function () {
-          count++;
+          docTitle = [document.title, docTitleStaticPart],
+          flashTimer;
+        state.stopFlashingTime = function () {
+          elements.timerPauseButton.disabled = false;
+          elements.timerResetButton.disabled = false;
+          elements.timerSkipButton.disabled = false;
+          elements.trTimeComponents.classList.remove('hidden');
 
-          console.log('flash running', { count });
+          clearInterval(flashTimer);
+          resolve(null);
+        };
+
+        if (!flashTimeIndefinitely) {
+          elements.timerPauseButton.disabled = true;
+          elements.timerResetButton.disabled = true;
+          elements.timerSkipButton.disabled = true;
+        }
+
+        flashTimer = setInterval(function () {
+          count++;
 
           elements.trTimeComponents.classList.toggle('hidden');
           document.title = docTitle[count % 2];
 
-          if (flashTimeIndefinitely)
-            state.stopFlashingTime = function () {
-              elements.trTimeComponents.classList.remove('hidden');
-              clearInterval(flashTimer);
-              resolve(null);
-            };
-          else {
+          if (!flashTimeIndefinitely) {
             if (count === 10) {
               document.title = docTitleStaticPart;
-              elements.trTimeComponents.classList.remove('hidden');
-              clearInterval(flashTimer);
-              resolve(null);
+              state.stopFlashingTime();
             }
           }
         }, 500);
@@ -263,9 +289,11 @@ function resumeTimer() {
   );
   state.stopFlashingTime();
 
+  const mode = state.selectedMode;
   startTimer()
     .then(function () {
-      cleanupAfterTimerStops(true);
+      cleanupAfterTimerStops(true, mode);
+      updateTimer();
     })
     .catch(reportInternalError);
 }
@@ -273,13 +301,16 @@ function resumeTimer() {
 function resetTimer() {
   clearTimer({ reset: true })
     .then(function () {
-      cleanupAfterTimerStops(false);
-      setMode(state.selectedMode);
+      state.stopFlashingTime?.();
+      cleanupAfterTimerStops();
+      updateTimer();
     })
     .catch(reportInternalError);
 }
 
 function startTimer() {
+  state.isTimerRunning = true;
+
   return new Promise(function (resolve, reject) {
     timer.tick = setInterval(function () {
       try {
@@ -321,6 +352,7 @@ function startTimer() {
 
         timer.secs -= 1;
       } catch (e) {
+        state.isTimerRunning = false;
         clearInterval(timer.tick);
         reject(e);
       }
@@ -337,9 +369,11 @@ function initializeTimer() {
 
   updateButtonVisibilities('start');
 
+  const mode = state.selectedMode;
   startTimer()
     .then(function () {
-      cleanupAfterTimerStops(true);
+      cleanupAfterTimerStops(true, mode);
+      updateTimer();
     })
     .catch(reportInternalError);
 }
@@ -350,15 +384,23 @@ function updateRoundCounters() {
   elements.spanLBreakRoundCounter.innerText = state.rounds[modes.lbreak];
 }
 
-function cleanupAfterTimerStops(updateRounds) {
+function cleanupAfterTimerStops(
+  shouldUpdateRounds = false,
+  modeToUpdate = null
+) {
+  console.log('cleanupAfterTimerStops', {
+    shouldUpdateRounds,
+    modeToUpdate,
+    selectedMode: state.selectedMode,
+  });
+
   updateButtonVisibilities('reset');
 
   document.title = docTitleStaticPart;
 
-  if (updateRounds) {
-    state.rounds[state.selectedMode]++;
+  if (shouldUpdateRounds) {
+    state.rounds[modeToUpdate]++;
     updateRoundCounters();
-
     setMode(state.selectedMode);
 
     // setTimeout(function () {
@@ -388,6 +430,7 @@ window.onload = function () {
   elements.timerPauseButton = document.getElementById('button-timer-pause');
   elements.timerResumeButton = document.getElementById('button-timer-resume');
   elements.timerResetButton = document.getElementById('button-timer-reset');
+  elements.timerSkipButton = document.getElementById('button-skip-round');
 
   elements.imageRingAlarm = document.getElementById('img-ring-alarm');
   elements.imageRingTick = document.getElementById('img-ring-tick');

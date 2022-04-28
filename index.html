@@ -141,6 +141,7 @@
                 id="input-setting-pomo-time"
                 min="1"
                 max="60"
+                onchange="onSettingFieldUpdate(this)"
               />
               <h6>mins</h6>
             </td>
@@ -151,6 +152,7 @@
                 id="input-setting-sbreak-time"
                 min="1"
                 max="60"
+                onchange="onSettingFieldUpdate(this)"
               />
               <h6>mins</h6>
             </td>
@@ -161,6 +163,7 @@
                 id="input-setting-lbreak-time"
                 min="1"
                 max="60"
+                onchange="onSettingFieldUpdate(this)"
               />
               <h6>mins</h6>
             </td>
@@ -177,6 +180,7 @@
                 type="checkbox"
                 id="checkbox-auto-start-breaks"
                 class="smaller-text"
+                onchange="onSettingFieldUpdate(this)"
               />
             </td>
           </tr>
@@ -192,6 +196,7 @@
                 type="checkbox"
                 id="checkbox-auto-start-pomos"
                 class="smaller-text"
+                onchange="onSettingFieldUpdate(this)"
               />
             </td>
           </tr>
@@ -203,15 +208,15 @@
             <td class="right-aligned smaller-text">
               <select
                 id="select-alarm-sounds"
-                onchange="ring(this.value, 1)"
                 class="smaller-text"
+                onchange="onSettingFieldUpdate(this)"
               ></select>
               <img
                 id="img-ring-alarm"
                 src="resources/images/ring.png"
                 alt="ring alarm"
                 height="15px"
-                onclick="onSpeakerClick(this.id)"
+                onclick="onSpeakerClick(this)"
               />
             </td>
           </tr>
@@ -228,6 +233,7 @@
                 min="1"
                 max="10"
                 class="smaller-text"
+                onchange="onSettingFieldUpdate(this)"
               />
               times
             </td>
@@ -240,15 +246,15 @@
             <td class="right-aligned smaller-text">
               <select
                 id="select-ticking-sounds"
-                onchange="onTickSoundValueChange(this.value)"
                 class="smaller-text"
+                onchange="onSettingFieldUpdate(this)"
               ></select>
               <img
                 id="img-ring-tick"
                 src="resources/images/ring.png"
                 alt="ring tick"
                 height="15px"
-                onclick="onSpeakerClick(this.id)"
+                onclick="onSpeakerClick(this)"
               />
             </td>
           </tr>
@@ -258,7 +264,11 @@
               <label>Notification</label>
             </td>
             <td class="right-aligned smaller-text">
-              <select id="select-notif-event" class="smaller-text"></select>
+              <select
+                id="select-notif-event"
+                class="smaller-text"
+                onchange="onSettingFieldUpdate(this)"
+              ></select>
               <input
                 required
                 type="number"
@@ -266,6 +276,7 @@
                 min="1"
                 max="60"
                 class="smaller-text"
+                onchange="onSettingFieldUpdate(this)"
               />
               mins
             </td>
@@ -273,8 +284,21 @@
         </table>
       </div>
 
+      <div id="container-unsaved-settings-message" class="removed">
+        <table id="table-unsaved-settings-message">
+          <tr>
+            <td class="right-aligned">
+              <img src="resources/images/attention.webp" height="12px" />
+            </td>
+            <td class="left-aligned">Settings are unsaved</td>
+          </tr>
+        </table>
+      </div>
+
       <div class="flex-row">
         <input
+          id="button-setting-save"
+          disabled
           type="button"
           class="half-button"
           value="OK"

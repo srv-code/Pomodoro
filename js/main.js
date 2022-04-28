@@ -16,40 +16,56 @@ const state = {
     sbreak: 0,
     lbreak: 0,
   },
+  settingsTargets: {
+    unsaved: {},
+    error: {},
+  },
 };
 
 const elements = {
   containerNotifWarning: null,
+  containerSettingUnsavedMessage: null,
+
   labelNotifAsk: null,
   labelNotifError: null,
+
   spanMins: null,
   spanSecs: null,
   spanTicker: null,
-  trTimeComponents: null,
-  progressTimer: null,
-  timerStartButton: null,
-  timerPauseButton: null,
-  timerResumeButton: null,
-  timerResetButton: null,
-  timerSkipButton: null,
-  imageRingAlarm: null,
-  imageRingTick: null,
-  headerPomo: null,
-  headerSBreak: null,
-  headerLBreak: null,
   spanPomoRoundCounter: null,
   spanSBreakRoundCounter: null,
   spanLBreakRoundCounter: null,
-  settingInputPomoTime: null,
-  settingInputSBreakTime: null,
-  settingInputLBreakTime: null,
-  settingInputNotifTime: null,
-  settingInputAlarmRepeat: null,
-  settingCheckboxAutoStartBreaks: null,
-  settingCheckboxAutoStartPomos: null,
-  settingDropdownAlarmSounds: null,
-  settingDropdownTickingSounds: null,
-  settingDropdownNotifEvent: null,
+
+  trTimeComponents: null,
+
+  progressTimer: null,
+
+  buttonTimerStart: null,
+  buttonTimerPause: null,
+  buttonTimerResume: null,
+  buttonTimerReset: null,
+  buttonTimerSkip: null,
+  buttonSettingSave: null,
+
+  imageRingAlarm: null,
+  imageRingTick: null,
+
+  headerPomo: null,
+  headerSBreak: null,
+  headerLBreak: null,
+
+  inputSettingPomoTime: null,
+  inputSettingSBreakTime: null,
+  inputSettingLBreakTime: null,
+  inputSettingNotifTime: null,
+  inputSettingAlarmRepeat: null,
+
+  checkboxSettingAutoStartBreaks: null,
+  checkboxSettingAutoStartPomos: null,
+
+  dropdownSettingAlarmSounds: null,
+  dropdownSettingTickingSounds: null,
+  dropdownSettingNotifEvent: null,
 };
 
 const alarmSounds = {
@@ -108,6 +124,135 @@ const settings = {
   },
   custom: {},
 };
+
+/**
+ * - Checks for invalid value
+ * - Checks if setting is unsaved, shows message then
+ * - Performs action based on the target selected
+ */
+function onSettingFieldUpdate(target) {
+  console.log('onSettingFieldUpdate:', {
+    target,
+    id: target.id,
+    value: target.value,
+    checked: target.checked,
+  });
+
+  function validateInput(hasError, previousValue, currentValue, target) {
+    console.log('validateInput', {
+      hasError,
+      previousValue,
+      typeOfPreviousValue: typeof previousValue,
+      currentValue,
+      typeOfCurrentValue: typeof currentValue,
+      target,
+    });
+
+    if (hasError) {
+      target.classList.add('input-error');
+      elements.buttonSettingSave.disabled = true;
+      state.settingsTargets.error[target.id] = target;
+    } else {
+      target.classList.remove('input-error');
+      // elements.buttonSettingSave.disabled = false;
+      delete state.settingsTargets.error[target.id];
+
+      if (previousValue === currentValue)
+        delete state.settingsTargets.unsaved[target.id];
+      else state.settingsTargets.unsaved[target.id] = target;
+
+      if (
+        !Object.keys(state.settingsTargets.unsaved).length &&
+        !Object.keys(state.settingsTargets.error).length
+      ) {
+        elements.buttonSettingSave.disabled = false;
+        elements.containerSettingUnsavedMessage.classList.remove('removed');
+      } else {
+        elements.buttonSettingSave.disabled = true;
+        elements.containerSettingUnsavedMessage.classList.add('removed');
+      }
+    }
+  }
+
+  switch (target) {
+    case elements.inputSettingPomoTime:
+    case elements.inputSettingSBreakTime:
+    case elements.inputSettingLBreakTime:
+      validateInput(
+        !target.value || target.value < 1 || target.value > 60,
+        settings.custom.times[
+          target === elements.inputSettingPomoTime
+            ? 'pomo'
+            : target === elements.inputSettingSBreakTime
+            ? 'sbreak'
+            : 'lbreak'
+        ],
+        target.value * 60,
+        target
+      );
+      break;
+
+    case elements.inputSettingAlarmRepeat:
+      validateInput(
+        !target.value || target.value < 1 || target.value > 10,
+        settings.custom.alarmRepeatCount,
+        target.value,
+        target
+      );
+      break;
+
+    case elements.inputSettingNotifTime:
+      validateInput(
+        !target.value || target.value < 1 || target.value > 60,
+        settings.custom.notification.timeInMins,
+        target.value,
+        target
+      );
+      break;
+
+    case elements.checkboxSettingAutoStartBreaks:
+    case elements.checkboxSettingAutoStartPomos:
+      validateInput(
+        false,
+        settings.custom.autoStart[
+          target === elements.checkboxSettingAutoStartBreaks
+            ? 'breaks'
+            : 'pomos'
+        ],
+        target.checked,
+        target
+      );
+      break;
+
+    case elements.dropdownSettingAlarmSounds:
+      validateInput(false, settings.custom.alarmSound, target.value, target);
+      ring(target.value, 1);
+      break;
+
+    case elements.dropdownSettingTickingSounds:
+      validateInput(false, settings.custom.tickingSound, target.value, target);
+      if (target.value === alarmSounds.tickers[0]) {
+        audio?.pause();
+        elements.imageRingTick.classList.add('removed');
+      } else {
+        elements.imageRingTick.classList.remove('removed');
+        ring(target.value, 1);
+      }
+      break;
+
+    case elements.dropdownSettingNotifEvent:
+      validateInput(
+        false,
+        settings.custom.notification.event,
+        target.value,
+        target
+      );
+      break;
+
+    default:
+      throw new Error('Unknown target selected: ' + target.id);
+  }
+}
 
 function reportInternalError(e) {
   console.error('Internal Error:', e);
@@ -174,31 +319,31 @@ function updateButtonVisibilities(state) {
     //   break;
 
     case 'start':
-      elements.timerPauseButton.classList.remove('removed');
-      elements.timerResetButton.classList.remove('removed');
-      elements.timerStartButton.classList.add('removed');
-      elements.timerResumeButton.classList.add('removed');
+      elements.buttonTimerPause.classList.remove('removed');
+      elements.buttonTimerReset.classList.remove('removed');
+      elements.buttonTimerStart.classList.add('removed');
+      elements.buttonTimerResume.classList.add('removed');
       break;
 
     case 'pause':
-      elements.timerPauseButton.classList.add('removed');
-      elements.timerResetButton.classList.remove('removed');
-      elements.timerStartButton.classList.add('removed');
-      elements.timerResumeButton.classList.remove('removed');
+      elements.buttonTimerPause.classList.add('removed');
+      elements.buttonTimerReset.classList.remove('removed');
+      elements.buttonTimerStart.classList.add('removed');
+      elements.buttonTimerResume.classList.remove('removed');
       break;
 
     case 'resume':
-      elements.timerPauseButton.classList.remove('removed');
-      elements.timerResetButton.classList.remove('removed');
-      elements.timerStartButton.classList.add('removed');
-      elements.timerResumeButton.classList.add('removed');
+      elements.buttonTimerPause.classList.remove('removed');
+      elements.buttonTimerReset.classList.remove('removed');
+      elements.buttonTimerStart.classList.add('removed');
+      elements.buttonTimerResume.classList.add('removed');
       break;
 
     case 'reset':
-      elements.timerPauseButton.classList.add('removed');
-      elements.timerResetButton.classList.add('removed');
-      elements.timerStartButton.classList.remove('removed');
-      elements.timerResumeButton.classList.add('removed');
+      elements.buttonTimerPause.classList.add('removed');
+      elements.buttonTimerReset.classList.add('removed');
+      elements.buttonTimerStart.classList.remove('removed');
+      elements.buttonTimerResume.classList.add('removed');
       break;
 
     default:
@@ -235,9 +380,9 @@ function clearTimer({
           docTitle = [document.title, docTitleStaticPart],
           flashTimer;
         state.stopFlashingTime = function () {
-          elements.timerPauseButton.disabled = false;
-          elements.timerResetButton.disabled = false;
-          elements.timerSkipButton.disabled = false;
+          elements.buttonTimerPause.disabled = false;
+          elements.buttonTimerReset.disabled = false;
+          elements.buttonTimerSkip.disabled = false;
           elements.trTimeComponents.classList.remove('hidden');
 
           clearInterval(flashTimer);
@@ -245,9 +390,9 @@ function clearTimer({
         };
 
         if (!flashTimeIndefinitely) {
-          elements.timerPauseButton.disabled = true;
-          elements.timerResetButton.disabled = true;
-          elements.timerSkipButton.disabled = true;
+          elements.buttonTimerPause.disabled = true;
+          elements.buttonTimerReset.disabled = true;
+          elements.buttonTimerSkip.disabled = true;
         }
 
         flashTimer = setInterval(function () {
@@ -426,16 +571,15 @@ window.onload = function () {
 
   elements.progressTimer = document.getElementById('progress-timer');
 
-  elements.timerStartButton = document.getElementById('button-timer-start');
-  elements.timerPauseButton = document.getElementById('button-timer-pause');
-  elements.timerResumeButton = document.getElementById('button-timer-resume');
-  elements.timerResetButton = document.getElementById('button-timer-reset');
-  elements.timerSkipButton = document.getElementById('button-skip-round');
+  elements.buttonTimerStart = document.getElementById('button-timer-start');
+  elements.buttonTimerPause = document.getElementById('button-timer-pause');
+  elements.buttonTimerResume = document.getElementById('button-timer-resume');
+  elements.buttonTimerReset = document.getElementById('button-timer-reset');
+  elements.buttonTimerSkip = document.getElementById('button-skip-round');
+  elements.buttonSettingSave = document.getElementById('button-setting-save');
 
   elements.imageRingAlarm = document.getElementById('img-ring-alarm');
   elements.imageRingTick = document.getElementById('img-ring-tick');
-  if (alarmSounds.tickers[0] === 'None')
-    elements.imageRingTick.classList.add('removed');
 
   elements.headerPomo = document.getElementById('span-mode-pomo');
   elements.headerSBreak = document.getElementById('span-mode-sbreak');
@@ -447,36 +591,40 @@ window.onload = function () {
   elements.spanLBreakRoundCounter =
     document.getElementById('span-lbreak-rounds');
 
-  elements.settingInputPomoTime = document.getElementById(
+  elements.containerSettingUnsavedMessage = document.getElementById(
+    'container-unsaved-settings-message'
+  );
+
+  elements.inputSettingPomoTime = document.getElementById(
     'input-setting-pomo-time'
   );
-  elements.settingInputSBreakTime = document.getElementById(
+  elements.inputSettingSBreakTime = document.getElementById(
     'input-setting-sbreak-time'
   );
-  elements.settingInputLBreakTime = document.getElementById(
+  elements.inputSettingLBreakTime = document.getElementById(
     'input-setting-lbreak-time'
   );
-  elements.settingInputNotifTime = document.getElementById(
+  elements.inputSettingNotifTime = document.getElementById(
     'input-setting-notif-time'
   );
-  elements.settingInputAlarmRepeat =
+  elements.inputSettingAlarmRepeat =
     document.getElementById('input-alarm-repeat');
 
-  elements.settingCheckboxAutoStartBreaks = document.getElementById(
+  elements.checkboxSettingAutoStartBreaks = document.getElementById(
     'checkbox-auto-start-breaks'
   );
 
-  elements.settingCheckboxAutoStartPomos = document.getElementById(
+  elements.checkboxSettingAutoStartPomos = document.getElementById(
     'checkbox-auto-start-pomos'
   );
 
-  elements.settingDropdownAlarmSounds = document.getElementById(
+  elements.dropdownSettingAlarmSounds = document.getElementById(
     'select-alarm-sounds'
   );
-  elements.settingDropdownTickingSounds = document.getElementById(
+  elements.dropdownSettingTickingSounds = document.getElementById(
     'select-ticking-sounds'
   );
-  elements.settingDropdownNotifEvent =
+  elements.dropdownSettingNotifEvent =
     document.getElementById('select-notif-event');
 
   /* loads & sets custom settings */
@@ -485,13 +633,13 @@ window.onload = function () {
     structuredClone(settings.default);
 
   /* Load values in all HTML elements */
-  elements.settingInputPomoTime.value = Math.floor(
+  elements.inputSettingPomoTime.value = Math.floor(
     settings.custom.times.pomo / 60
   );
-  elements.settingInputSBreakTime.value = Math.floor(
+  elements.inputSettingSBreakTime.value = Math.floor(
     settings.custom.times.sbreak / 60
   );
-  elements.settingInputLBreakTime.value = Math.floor(
+  elements.inputSettingLBreakTime.value = Math.floor(
     settings.custom.times.lbreak / 60
   );
 
@@ -502,10 +650,10 @@ window.onload = function () {
     option.text = soundName.substring(0, soundName.lastIndexOf('.'));
     option.value = soundName;
     option.selected = soundName === settings.custom.alarmSound;
-    elements.settingDropdownAlarmSounds.appendChild(option);
+    elements.dropdownSettingAlarmSounds.appendChild(option);
   });
 
-  elements.settingInputAlarmRepeat.value = settings.custom.alarmRepeatCount;
+  elements.inputSettingAlarmRepeat.value = settings.custom.alarmRepeatCount;
 
   alarmSounds.tickers.forEach(soundName => {
     const option = document.createElement('option');
@@ -515,24 +663,28 @@ window.onload = function () {
     );
     option.value = soundName;
     option.selected = soundName === settings.custom.tickingSound;
-    elements.settingDropdownTickingSounds.appendChild(option);
+    elements.dropdownSettingTickingSounds.appendChild(option);
   });
+
+  elements.imageRingTick.classList[
+    settings.custom.tickingSound === 'None' ? 'add' : 'remove'
+  ]('removed');
 
   notificationEvents.forEach(event => {
     const option = document.createElement('option');
     option.text = event;
     option.value = event;
     option.selected = event === settings.custom.notification.event;
-    elements.settingDropdownNotifEvent.appendChild(option);
+    elements.dropdownSettingNotifEvent.appendChild(option);
   });
 
-  elements.settingCheckboxAutoStartBreaks.checked =
+  elements.checkboxSettingAutoStartBreaks.checked =
     settings.custom.autoStart.breaks;
 
-  elements.settingCheckboxAutoStartPomos.checked =
+  elements.checkboxSettingAutoStartPomos.checked =
     settings.custom.autoStart.pomos;
 
-  elements.settingInputNotifTime.value =
+  elements.inputSettingNotifTime.value =
     settings.custom.notification.timeInMins;
 
   // state.notification.supported = typeof Notification !== 'undefined';
@@ -602,54 +754,63 @@ Reminders won't be received!`;
 function saveSetting() {
   const userSettings = {
     times: {
-      pomo: +elements.settingInputPomoTime.value * 60,
-      sbreak: +elements.settingInputSBreakTime.value * 60,
-      lbreak: +elements.settingInputLBreakTime.value * 60,
+      pomo: +elements.inputSettingPomoTime.value * 60,
+      sbreak: +elements.inputSettingSBreakTime.value * 60,
+      lbreak: +elements.inputSettingLBreakTime.value * 60,
     },
     autoStart: {
-      breaks: elements.settingCheckboxAutoStartBreaks.checked,
-      pomos: elements.settingCheckboxAutoStartPomos.checked,
+      breaks: elements.checkboxSettingAutoStartBreaks.checked,
+      pomos: elements.checkboxSettingAutoStartPomos.checked,
     },
-    alarmSound: elements.settingDropdownAlarmSounds.value,
-    alarmRepeatCount: +elements.settingInputAlarmRepeat.value,
-    tickingSound: elements.settingDropdownTickingSounds.value,
+    alarmSound: elements.dropdownSettingAlarmSounds.value,
+    alarmRepeatCount: +elements.inputSettingAlarmRepeat.value,
+    tickingSound: elements.dropdownSettingTickingSounds.value,
     notification: {
-      event: elements.settingDropdownNotifEvent.value,
-      timeInMins: elements.settingInputNotifTime.value,
+      event: elements.dropdownSettingNotifEvent.value,
+      timeInMins: elements.inputSettingNotifTime.value,
     },
   };
 
   settings.custom = userSettings;
   localStorage.setItem(settings.storageKey, JSON.stringify(userSettings));
 
+  elements.buttonSettingSave.disabled = true;
+  elements.containerSettingUnsavedMessage.classList.add('removed');
+
   console.log({ settings });
 }
 
 function resetSetting() {
-  elements.settingInputPomoTime.value = Math.floor(
+  elements.inputSettingPomoTime.value = Math.floor(
     settings.default.times.pomo / 60
   );
-  elements.settingInputSBreakTime.value = Math.floor(
+  elements.inputSettingSBreakTime.value = Math.floor(
     settings.default.times.sbreak / 60
   );
-  elements.settingInputLBreakTime.value = Math.floor(
+  elements.inputSettingLBreakTime.value = Math.floor(
     settings.default.times.lbreak / 60
   );
-  elements.settingCheckboxAutoStartBreaks.checked =
+  elements.checkboxSettingAutoStartBreaks.checked =
     settings.default.autoStart.breaks;
-  elements.settingCheckboxAutoStartPomos.checked =
+  elements.checkboxSettingAutoStartPomos.checked =
     settings.default.autoStart.pomos;
-  elements.settingDropdownAlarmSounds.value = settings.default.alarmSound;
-  elements.settingInputAlarmRepeat.value = settings.default.alarmRepeatCount;
-  elements.settingDropdownTickingSounds.value = settings.default.tickingSound;
-  elements.settingDropdownNotifEvent.value =
+  elements.dropdownSettingAlarmSounds.value = settings.default.alarmSound;
+  elements.inputSettingAlarmRepeat.value = settings.default.alarmRepeatCount;
+  elements.dropdownSettingTickingSounds.value = settings.default.tickingSound;
+  elements.dropdownSettingNotifEvent.value =
     settings.default.notification.event;
-  elements.settingInputNotifTime.value =
+  elements.inputSettingNotifTime.value =
     settings.default.notification.timeInMins;
 
   localStorage.clear();
 
   settings.custom = structuredClone(settings.default);
+
+  elements.imageRingTick.classList[
+    settings.custom.tickingSound === 'None' ? 'add' : 'remove'
+  ]('removed');
+  elements.containerSettingUnsavedMessage.classList.add('removed');
+  elements.buttonSettingSave.disabled = true;
 }
 
 function test() {
@@ -754,34 +915,32 @@ function showNotification() {
   }
 }
 
-function onSpeakerClick(id) {
-  console.log('onSpeakerClick:', { id });
-
-  switch (id) {
-    case 'img-ring-alarm':
-      ring(elements.settingDropdownAlarmSounds.value, 1);
+function onSpeakerClick(target) {
+  switch (target) {
+    case elements.imageRingAlarm:
+      ring(elements.dropdownSettingAlarmSounds.value, 1);
       break;
 
-    case 'img-ring-tick':
-      ring(elements.settingDropdownTickingSounds.value, 1);
+    case elements.imageRingTick:
+      ring(elements.dropdownSettingTickingSounds.value, 1);
       break;
 
     default:
-      throw new Error('Unrecognized image ID: ' + id);
+      throw new Error('Unknown target selected: ' + target.id);
   }
 }
 
-function onTickSoundValueChange(soundName) {
-  console.log('onTickSoundValueChange', { value: soundName });
+// function onTickSoundValueChange(soundName) {
+//   console.log('onTickSoundValueChange', { value: soundName });
 
-  if (soundName === alarmSounds.tickers[0]) {
-    audio?.pause();
-    elements.imageRingTick.classList.add('removed');
-  } else {
-    elements.imageRingTick.classList.remove('removed');
-    ring(soundName, 1);
-  }
-}
+//   if (soundName === alarmSounds.tickers[0]) {
+//     audio?.pause();
+//     elements.imageRingTick.classList.add('removed');
+//   } else {
+//     elements.imageRingTick.classList.remove('removed');
+//     ring(soundName, 1);
+//   }
+// }
 
 let audio;
 
@@ -805,8 +964,9 @@ function ring(soundName, repeatCount) {
   }
 }
 
-window.onerror = (message, source, lineno, colno, error) =>
+window.onerror = function (message, source, lineno, colno, error) {
   alert(
     'Error occured:\n' +
       JSON.stringify({ message, source, lineno, colno, error }, null, 2)
   );
+};

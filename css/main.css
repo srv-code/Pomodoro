@@ -100,6 +100,18 @@
   padding: 5px 10px;
 }
 
+#container-unsaved-settings-message {
+  margin: 0 -5px;
+  margin-top: 10px;
+}
+
+#table-unsaved-settings-message {
+  padding: 0;
+  font-size: 12px;
+  color: lightgreen;
+  background-color: rgb(231, 101, 101);
+}
+
 body {
   /* padding: 10px; */
   background-color: rgb(9, 196, 196);
@@ -133,6 +145,11 @@ th {
 .tester {
   background-color: olive;
   color: white;
+}
+
+.input-error {
+  background-color: rgb(239, 96, 96);
+  border-color: red;
 }
 
 td {

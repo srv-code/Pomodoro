@@ -7,7 +7,16 @@ const modes = {
 };
 
 const state = {
-  isTimerRunning: false,
+  timers: {
+    // isTimerRunning: false,
+    isRunningForClock: false,
+    forSettingsMessage: null,
+    forTickingSound: null,
+  },
+  audio: {
+    forTick: null,
+    forSetting: null,
+  },
   notificationSupported: null,
   selectedMode: null,
   stopFlashingTime: null,
@@ -20,7 +29,6 @@ const state = {
     unsaved: {},
     error: {},
   },
-  settingsSuccessTimer: null,
 };
 
 const elements = {
@@ -60,7 +68,7 @@ const elements = {
   inputSettingPomoTime: null,
   inputSettingSBreakTime: null,
   inputSettingLBreakTime: null,
-  inputSettingNotifTime: null,
+  // inputSettingNotifTime: null,
   inputSettingAlarmRepeat: null,
 
   checkboxSettingAutoStartBreaks: null,
@@ -68,7 +76,7 @@ const elements = {
 
   dropdownSettingAlarmSounds: null,
   dropdownSettingTickingSounds: null,
-  dropdownSettingNotifEvent: null,
+  // dropdownSettingNotifEvent: null,
 };
 
 const alarmSounds = {
@@ -96,7 +104,7 @@ const alarmSounds = {
   tickers: ['None', 'Clock Ticking.wav'],
 };
 
-const notificationEvents = ['Last', 'Every'];
+// const notificationEvents = ['Last', 'Every'];
 
 const timer = {
   tick: null,
@@ -111,7 +119,7 @@ const settings = {
       pomo: 25 * 60,
       sbreak: 5 * 60,
       lbreak: 15 * 60,
-      test: 3, // TODO: Remove this, for testing purpose only}
+      test: 3, // TODO: Remove this, for testing purpose only
     },
     autoStart: {
       breaks: true,
@@ -120,10 +128,10 @@ const settings = {
     alarmSound: alarmSounds.pomo[0],
     alarmRepeatCount: 1,
     tickingSound: alarmSounds.tickers[0],
-    notification: {
-      event: notificationEvents[0],
-      timeInMins: 5,
-    },
+    // notification: {
+    //   event: notificationEvents[0],
+    //   timeInMins: 5,
+    // },
   },
   custom: {},
 };
@@ -160,13 +168,20 @@ function updateSettingsMessage({
     elements.trSettingsMessage.classList.remove('settings-error-message');
   }
 
+  function resetTimer() {
+    if (state.timers.forSettingsMessage) {
+      console.log('clearing timer...', {
+        'state.timers.forSettingsMessage': state.timers.forSettingsMessage,
+      });
+      clearInterval(state.timers.forSettingsMessage);
+      state.timers.forSettingsMessage = null;
+    }
+  }
+
   if (hide) doHide();
   else if (isSaving) {
     if (isInvalid || isUnsaved) {
-      if (state.settingsSuccessTimer) {
-        clearInterval(state.settivlvangsSuccessTimer);
-        state.settingsSuccessTimer = null;
-      }
+      resetTimer();
 
       resetClasses();
       elements.containerSettingMessage.classList.add('settings-error-message');
@@ -184,6 +199,8 @@ function updateSettingsMessage({
       elements.buttonSettingSave.disabled = !isUnsaved || isInvalid;
     } else doHide();
   } else if (doneSaving || doneResetting) {
+    resetTimer();
+
     resetClasses();
     elements.containerSettingMessage.classList.add('settings-saved-message');
 
@@ -196,7 +213,7 @@ function updateSettingsMessage({
 
     elements.buttonSettingSave.disabled = true;
 
-    state.settingsSuccessTimer = setTimeout(doHide, 2000);
+    state.timers.forSettingsMessage = setTimeout(doHide, 2000);
   }
 }
 
@@ -265,14 +282,14 @@ function onSettingFieldUpdate(target) {
       );
       break;
 
-    case elements.inputSettingNotifTime:
-      validateInput(
-        !target.value || target.value < 1 || target.value > 60,
-        settings.custom.notification.timeInMins,
-        target.value,
-        target
-      );
-      break;
+    // case elements.inputSettingNotifTime:
+    //   validateInput(
+    //     !target.value || target.value < 1 || target.value > 60,
+    //     settings.custom.notification.timeInMins,
+    //     target.value,
+    //     target
+    //   );
+    //   break;
 
     case elements.checkboxSettingAutoStartBreaks:
     case elements.checkboxSettingAutoStartPomos:
@@ -304,14 +321,14 @@ function onSettingFieldUpdate(target) {
       }
       break;
 
-    case elements.dropdownSettingNotifEvent:
-      validateInput(
-        false,
-        settings.custom.notification.event,
-        target.value,
-        target
-      );
-      break;
+    // case elements.dropdownSettingNotifEvent:
+    //   validateInput(
+    //     false,
+    //     settings.custom.notification.event,
+    //     target.value,
+    //     target
+    //   );
+    //   break;
 
     default:
       throw new Error('Unknown target selected: ' + target.id);
@@ -324,7 +341,12 @@ function reportInternalError(e) {
   throw e;
 }
 
-function updateTimer(reset) {
+function updateTimer(reset = false) {
+  console.log('updateTimer::before', {
+    reset,
+    'settings.custom.times.test': settings.custom.times.test,
+  });
+
   timer.mode = reset ? null : state.selectedMode;
   timer.secs = reset ? null : settings.custom.times.test; // TODO: Remove this, for testing purpose only
   // timer.secs =  reset ? null :settings.custom.times[mode]; // TODO: Enable this
@@ -339,6 +361,8 @@ function updateTimer(reset) {
     .toString()
     .padStart(2, '0');
   elements.spanTicker.classList.remove('hidden');
+
+  console.log('updateTimer::after', { reset, timer });
 }
 
 function setMode(mode) {
@@ -347,7 +371,7 @@ function setMode(mode) {
   if (mode in modes) {
     if (mode === state.selectedMode) return;
     else {
-      if (state.isTimerRunning) {
+      if (state.timers.isRunningForClock) {
         if (confirm('Timer is currently running.\nSure to stop it?')) {
           resetTimer();
         } else return;
@@ -421,9 +445,16 @@ function clearTimer({
   flashTimeIndefinitely = false,
   notify = false,
 } = {}) {
-  state.isTimerRunning = false;
-
   return new Promise(function (resolve, reject) {
+    state.timers.isRunningForClock = false;
+    console.log('clearTimer', {
+      'state.audio.forTick': state.audio.forTick,
+    });
+    if (state.audio.forTick) {
+      state.audio.forTick.pause();
+      state.audio.forTick = null;
+    }
+
     try {
       clearInterval(timer.tick);
       timer.tick = null;
@@ -518,11 +549,35 @@ function resetTimer() {
 }
 
 function startTimer() {
-  state.isTimerRunning = true;
-
   return new Promise(function (resolve, reject) {
+    if (!timer.secs) updateTimer(); /* for safety */
+
+    state.timers.isRunningForClock = true;
+
+    if (settings.custom.tickingSound !== alarmSounds.tickers[0]) {
+      state.audio.forTick?.pause();
+      state.audio.forTick = new Audio(
+        `resources/audio/${settings.custom.tickingSound}`
+      );
+      state.audio.forTick.play();
+
+      // state.audio.forTick.onended = function () {
+      //   setTimeout(state.audio.forTick.play, 500);
+      // };
+
+      state.audio.forTick.onended = function () {
+        setTimeout(function () {
+          state.audio.forTick?.play();
+        }, 500);
+      };
+    }
+
     timer.tick = setInterval(function () {
       try {
+        console.log('startTimer.setInterval', {
+          'timer.secs': timer.secs,
+        });
+
         if (timer.secs === null || timer.secs === undefined)
           throw new Error('Invalid timer.secs: ' + timer.secs);
 
@@ -561,7 +616,11 @@ function startTimer() {
 
         timer.secs -= 1;
       } catch (e) {
-        state.isTimerRunning = false;
+        if (state.audio.forTick) {
+          state.audio.forTick.pause();
+          state.audio.forTick = null;
+        }
+        state.timers.isRunningForClock = false;
         clearInterval(timer.tick);
         reject(e);
       }
@@ -738,13 +797,13 @@ window.onload = function () {
     elements.imageRingTick.classList.add('removed');
   else elements.imageRingTick.classList.remove('removed');
 
-  notificationEvents.forEach(event => {
-    const option = document.createElement('option');
-    option.text = event;
-    option.value = event;
-    option.selected = event === settings.custom.notification.event;
-    elements.dropdownSettingNotifEvent.appendChild(option);
-  });
+  // notificationEvents.forEach(event => {
+  //   const option = document.createElement('option');
+  //   option.text = event;
+  //   option.value = event;
+  //   option.selected = event === settings.custom.notification.event;
+  //   elements.dropdownSettingNotifEvent.appendChild(option);
+  // });
 
   elements.checkboxSettingAutoStartBreaks.checked =
     settings.custom.autoStart.breaks;
@@ -752,8 +811,8 @@ window.onload = function () {
   elements.checkboxSettingAutoStartPomos.checked =
     settings.custom.autoStart.pomos;
 
-  elements.inputSettingNotifTime.value =
-    settings.custom.notification.timeInMins;
+  // elements.inputSettingNotifTime.value =
+  //   settings.custom.notification.timeInMins;
 
   // state.notification.supported = typeof Notification !== 'undefined';
   // if (!state.notification.supported)
@@ -820,11 +879,12 @@ Reminders won't be received!`;
 }
 
 function saveSetting() {
-  const userSettings = {
+  settings.custom = {
     times: {
       pomo: +elements.inputSettingPomoTime.value * 60,
       sbreak: +elements.inputSettingSBreakTime.value * 60,
       lbreak: +elements.inputSettingLBreakTime.value * 60,
+      test: 3, // TODO: Remove this, for testing purpose only
     },
     autoStart: {
       breaks: elements.checkboxSettingAutoStartBreaks.checked,
@@ -833,14 +893,13 @@ function saveSetting() {
     alarmSound: elements.dropdownSettingAlarmSounds.value,
     alarmRepeatCount: +elements.inputSettingAlarmRepeat.value,
     tickingSound: elements.dropdownSettingTickingSounds.value,
-    notification: {
-      event: elements.dropdownSettingNotifEvent.value,
-      timeInMins: elements.inputSettingNotifTime.value,
-    },
+    // notification: {
+    //   event: elements.dropdownSettingNotifEvent.value,
+    //   timeInMins: elements.inputSettingNotifTime.value,
+    // },
   };
 
-  settings.custom = userSettings;
-  localStorage.setItem(settings.storageKey, JSON.stringify(userSettings));
+  localStorage.setItem(settings.storageKey, JSON.stringify(settings.custom));
 
   updateSettingsMessage({ doneSaving: true });
   console.log({ settings });
@@ -863,10 +922,10 @@ function resetSetting() {
   elements.dropdownSettingAlarmSounds.value = settings.default.alarmSound;
   elements.inputSettingAlarmRepeat.value = settings.default.alarmRepeatCount;
   elements.dropdownSettingTickingSounds.value = settings.default.tickingSound;
-  elements.dropdownSettingNotifEvent.value =
-    settings.default.notification.event;
-  elements.inputSettingNotifTime.value =
-    settings.default.notification.timeInMins;
+  // elements.dropdownSettingNotifEvent.value =
+  //   settings.default.notification.event;
+  // elements.inputSettingNotifTime.value =
+  //   settings.default.notification.timeInMins;
 
   localStorage.clear();
 
@@ -964,6 +1023,41 @@ function test() {
 
   updateSettingsMessage({ doneSaving: true });
 
+  // console.log('test', {
+  //   'state.audio.forTick': state.audio.forTick,
+  // });
+  // if (!state.audio.forTick) {
+  //   console.log('will start ticking audio...');
+  //   if (settings.custom.tickingSound !== alarmSounds.tickers[0]) {
+  //     console.log('setting tick audio...');
+
+  //     console.log('pausing prev tick audio...');
+  //     state.audio.forTick?.pause();
+
+  //     console.log('setting new tick audio...');
+  //     state.audio.forTick = new Audio(
+  //       `resources/audio/${settings.custom.tickingSound}`
+  //     );
+
+  //     console.log('playing tick audio...');
+  //     state.audio.forTick.play();
+
+  //     // state.audio.forTick.onended = function () {
+  //     //   setTimeout(function () {
+  //     //     console.log('playing tick audio again...');
+  //     //     state.audio.forTick.play();
+  //     //   }, 500);
+  //     // };
+
+  //     state.audio.forTick.onended = function () {
+  //       setTimeout(state.audio.forTick.play, 500);
+  //     };
+  //   }
+  // } else {
+  //   console.log('stopping tick audio...');
+  //   state.audio.forTick?.pause();
+  // }
+
   console.log('test', { timer, state });
 }
 
@@ -1011,25 +1105,27 @@ function onSpeakerClick(target) {
 //   }
 // }
 
-let audio;
-
 function ring(soundName, repeatCount) {
   console.log('ring', { soundName, repeatCount });
 
-  if (audio) audio.pause();
-  audio = new Audio(`resources/audio/${soundName}`);
-  audio.play();
+  state.audio.forSetting?.pause();
+  state.audio.forSetting = new Audio(`resources/audio/${soundName}`);
+  state.audio.forSetting.play();
 
   if (repeatCount > 1) {
     let playCount = 1;
-    audio.onended = function () {
+    state.audio.forSetting.onended = function () {
       if (playCount < repeatCount) {
         setTimeout(function () {
-          audio.play();
+          state.audio.forSetting.play();
           playCount++;
         }, 500);
+      } else {
+        state.audio.forSetting = null;
       }
     };
+  } else {
+    state.audio.forSetting = null;
   }
 }
 

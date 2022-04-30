@@ -20,6 +20,7 @@ A replica of the [Pomofocus](https://pomofocus.io/) application
 - [x] Should flash time '00:00' after timer expires for 5 secs (same time as it holds)
 - [ ] Implement ticker sound
 - [ ] Implement a way to detect if the settings changes are unsaved and show in a label
+- [ ] Implement auto-save mechanism in the settings panel
 
 ### Bug Fixes
 

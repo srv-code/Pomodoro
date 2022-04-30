@@ -20,11 +20,12 @@ const state = {
     unsaved: {},
     error: {},
   },
+  settingsSuccessTimer: null,
 };
 
 const elements = {
   containerNotifWarning: null,
-  containerSettingUnsavedMessage: null,
+  containerSettingMessage: null,
 
   labelNotifAsk: null,
   labelNotifError: null,
@@ -37,6 +38,7 @@ const elements = {
   spanLBreakRoundCounter: null,
 
   trTimeComponents: null,
+  trSettingsMessage: null,
 
   progressTimer: null,
 
@@ -49,6 +51,7 @@ const elements = {
 
   imageRingAlarm: null,
   imageRingTick: null,
+  imageSettingsMessage: null,
 
   headerPomo: null,
   headerSBreak: null,
@@ -125,11 +128,78 @@ const settings = {
   custom: {},
 };
 
-/**
- * - Checks for invalid value
- * - Checks if setting is unsaved, shows message then
- * - Performs action based on the target selected
- */
+function updateSettingsMessage({
+  hide = false,
+  doneSaving = false,
+  doneResetting = false,
+  isSaving = false,
+  isInvalid = false,
+  isUnsaved = false,
+}) {
+  console.log('updateSettingsMessage', {
+    hide,
+    doneSaving,
+    doneResetting,
+    isSaving,
+    isInvalid,
+    isUnsaved,
+  });
+
+  function doHide() {
+    resetClasses();
+    elements.containerSettingMessage.classList.add('hidden');
+    elements.buttonSettingSave.disabled = true;
+  }
+
+  function resetClasses() {
+    elements.containerSettingMessage.classList.remove('hidden');
+    elements.containerSettingMessage.classList.remove('settings-error-message');
+    elements.containerSettingMessage.classList.remove('settings-saved-message');
+
+    elements.trSettingsMessage.classList.remove('settings-saved-message');
+    elements.trSettingsMessage.classList.remove('settings-error-message');
+  }
+
+  if (hide) doHide();
+  else if (isSaving) {
+    if (isInvalid || isUnsaved) {
+      if (state.settingsSuccessTimer) {
+        clearInterval(state.settivlvangsSuccessTimer);
+        state.settingsSuccessTimer = null;
+      }
+
+      resetClasses();
+      elements.containerSettingMessage.classList.add('settings-error-message');
+
+      elements.trSettingsMessage.classList.add('settings-error-message');
+
+      if (isInvalid) {
+        elements.trSettingsMessage.innerText = 'Settings are invalid';
+        elements.imageSettingsMessage.src = '../resources/images/cross.png';
+      } else {
+        elements.trSettingsMessage.innerText = 'Settings are unsaved';
+        elements.imageSettingsMessage.src = '../resources/images/warn.png';
+      }
+
+      elements.buttonSettingSave.disabled = !isUnsaved || isInvalid;
+    } else doHide();
+  } else if (doneSaving || doneResetting) {
+    resetClasses();
+    elements.containerSettingMessage.classList.add('settings-saved-message');
+
+    elements.trSettingsMessage.classList.add('settings-saved-message');
+    elements.trSettingsMessage.innerText = `Settings are ${
+      doneSaving ? 'saved' : 'reset'
+    }`;
+
+    elements.imageSettingsMessage.src = '../resources/images/tick.png';
+
+    elements.buttonSettingSave.disabled = true;
+
+    state.settingsSuccessTimer = setTimeout(doHide, 2000);
+  }
+}
+
 function onSettingFieldUpdate(target) {
   console.log('onSettingFieldUpdate:', {
     target,
@@ -154,24 +224,18 @@ function onSettingFieldUpdate(target) {
       state.settingsTargets.error[target.id] = target;
     } else {
       target.classList.remove('input-error');
-      // elements.buttonSettingSave.disabled = false;
       delete state.settingsTargets.error[target.id];
 
       if (previousValue === currentValue)
         delete state.settingsTargets.unsaved[target.id];
       else state.settingsTargets.unsaved[target.id] = target;
-
-      if (
-        !Object.keys(state.settingsTargets.unsaved).length &&
-        !Object.keys(state.settingsTargets.error).length
-      ) {
-        elements.buttonSettingSave.disabled = false;
-        elements.containerSettingUnsavedMessage.classList.remove('removed');
-      } else {
-        elements.buttonSettingSave.disabled = true;
-        elements.containerSettingUnsavedMessage.classList.add('removed');
-      }
     }
+
+    updateSettingsMessage({
+      isSaving: true,
+      isInvalid: Object.keys(state.settingsTargets.error).length !== 0,
+      isUnsaved: Object.keys(state.settingsTargets.unsaved).length !== 0,
+    });
   }
 
   switch (target) {
@@ -591,8 +655,8 @@ window.onload = function () {
   elements.spanLBreakRoundCounter =
     document.getElementById('span-lbreak-rounds');
 
-  elements.containerSettingUnsavedMessage = document.getElementById(
-    'container-unsaved-settings-message'
+  elements.containerSettingMessage = document.getElementById(
+    'container-settings-message'
   );
 
   elements.inputSettingPomoTime = document.getElementById(
@@ -609,6 +673,10 @@ window.onload = function () {
   );
   elements.inputSettingAlarmRepeat =
     document.getElementById('input-alarm-repeat');
+  elements.trSettingsMessage = document.getElementById('settings-messsage');
+  elements.imageSettingsMessage = document.getElementById(
+    'image-settings-message'
+  );
 
   elements.checkboxSettingAutoStartBreaks = document.getElementById(
     'checkbox-auto-start-breaks'
@@ -666,9 +734,9 @@ window.onload = function () {
     elements.dropdownSettingTickingSounds.appendChild(option);
   });
 
-  elements.imageRingTick.classList[
-    settings.custom.tickingSound === 'None' ? 'add' : 'remove'
-  ]('removed');
+  if (settings.custom.tickingSound === 'None')
+    elements.imageRingTick.classList.add('removed');
+  else elements.imageRingTick.classList.remove('removed');
 
   notificationEvents.forEach(event => {
     const option = document.createElement('option');
@@ -774,9 +842,7 @@ function saveSetting() {
   settings.custom = userSettings;
   localStorage.setItem(settings.storageKey, JSON.stringify(userSettings));
 
-  elements.buttonSettingSave.disabled = true;
-  elements.containerSettingUnsavedMessage.classList.add('removed');
-
+  updateSettingsMessage({ doneSaving: true });
   console.log({ settings });
 }
 
@@ -806,11 +872,11 @@ function resetSetting() {
 
   settings.custom = structuredClone(settings.default);
 
-  elements.imageRingTick.classList[
-    settings.custom.tickingSound === 'None' ? 'add' : 'remove'
-  ]('removed');
-  elements.containerSettingUnsavedMessage.classList.add('removed');
-  elements.buttonSettingSave.disabled = true;
+  if (settings.custom.tickingSound === 'None')
+    elements.imageRingTick.classList.add('removed');
+  else elements.imageRingTick.classList.remove('removed');
+
+  updateSettingsMessage({ doneResetting: true });
 }
 
 function test() {
@@ -895,6 +961,9 @@ function test() {
   //       console.log('promise rejected', { error });
   //     });
   // }
+
+  updateSettingsMessage({ doneSaving: true });
+
   console.log('test', { timer, state });
 }
 

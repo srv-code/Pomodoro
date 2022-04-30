@@ -30,6 +30,9 @@
   background-color: lightblue;
   color: purple;
   border-radius: 5px;
+  /* border-color: aqua;
+  border-style: inset; */
+  font-weight: bold;
 }
 
 .hidden {
@@ -100,16 +103,23 @@
   padding: 5px 10px;
 }
 
-#container-unsaved-settings-message {
-  margin: 0 -5px;
-  margin-top: 10px;
+#container-settings-message {
+  margin: 10px -5px 0 -5px;
 }
 
-#table-unsaved-settings-message {
+#table-settings-message {
   padding: 0;
   font-size: 12px;
+}
+
+.settings-error-message {
   color: lightgreen;
   background-color: rgb(231, 101, 101);
+}
+
+.settings-saved-message {
+  color: darkblue;
+  background-color: lightgreen;
 }
 
 body {

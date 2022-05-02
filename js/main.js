@@ -630,7 +630,151 @@ function startTimer() {
   // updateButtonVisibilities('start');
 }
 
-function skipRound() {}
+/**
+ * @returns true if went to next round otherwise false
+ */
+function gotoNextRound({ startTimer = false, skipping = false }) {
+  /*
+  [Algo]
+    if (Pomo.count < 4) 
+      Pomo -> SBreak 
+    else
+      Pomo -> LBreak 
+
+
+    --------------
+
+    if (current_mode === 'pomo') {
+      if (pomo.count % 4 === 0):
+        move_to_lbreak() 
+      else 
+        move_to_sbreak() 
+    } else if (current_mode === 'sbreak) {
+      move_to_pomo() 
+    } else if(current_mode === 'lbreak) {
+      move_to_pomo() 
+    }
+  */
+
+  // const currentMode = state.selectedMode;
+
+  state.rounds[state.selectedMode]++;
+  updateRoundCounters();
+
+  const nextMode =
+    state.selectedMode === modes.pomo
+      ? state.rounds.pomo % 4 === 0
+        ? modes.lbreak
+        : modes.sbreak
+      : modes.pomo;
+  // updatedRounds = structuredClone(state.rounds)[currentMode]++;
+
+  // switch (currentMode) {
+  //   case modes.pomo:
+  //     nextMode = state.rounds.pomo % 4 === 0 ? modes.lbreak : modes.sbreak;
+  //     break;
+
+  //   case modes.sbreak:
+  //   case modes.lbreak:
+  //     nextMode = modes.pomo;
+  //     break;
+
+  //   default:
+  //     reportInternalError(new Error('Invalid mode: ' + currentMode));
+  // }
+
+  function autoStart(isPomo) {
+    if (skipping || settings.custom.autoStart[isPomo ? 'pomos' : 'breaks']) {
+      console.log(
+        '[skipRound]',
+        `auto starting ${isPomo ? 'pomo' : 'break'}...`
+      );
+      setMode(nextMode);
+      if (startTimer) {
+        console.log('[skipRound]', 'starting timer...');
+      }
+      return true;
+    } else {
+      console.log(
+        '[skipRound]',
+        `auto start for ${isPomo ? 'pomo' : 'break'} disabled`
+      );
+      return false;
+    }
+  }
+
+  console.log('[skipRound]', {
+    'state.selectedMode': state.selectedMode,
+    'state.rounds': JSON.stringify(state.rounds),
+    nextMode,
+  });
+
+  return autoStart(nextMode === modes.pomo);
+
+  // if (nextMode === modes.pomo) {
+  //   if (settings.custom.autoStart.pomos) {
+  //     console.log('[skipRound]', 'auto starting pomo...');
+  //     setMode(nextMode);
+  //     if (startTimer) {
+  //       console.log('[skipRound]', 'start timer');
+  //     }
+  //     return true;
+  //   } else {
+  //     console.log('[skipRound]', 'auto start for pomos disabled');
+  //     return false;
+  //   }
+  // } else {
+  //   if (settings.custom.autoStart.breaks) {
+  //     console.log('[skipRound]', 'auto starting break...');
+  //     setMode(nextMode);
+  //     if (startTimer) {
+  //       console.log('[skipRound]', 'start timer');
+  //     }
+  //     return true;
+  //   } else {
+  //     console.log('[skipRound]', 'auto start for breaks disabled');
+  //     return false;
+  //   }
+  // }
+
+  // if (settings.custom.autoStart.breaks) {
+  //   if (nextMode !== modes.pomo) {
+  //     console.log('[skipRound]', 'auto starting break...');
+  //     setMode(nextMode);
+  //     if (startTimer) {
+  //       console.log('[skipRound]', 'start timer');
+  //     }
+  //   } else {
+  //     console.log('[skipRound]', 'auto start for breaks disabled');
+  //   }
+  // } else return false;
+
+  // if (settings.custom.autoStart.pomos) {
+  //   if (nextMode === modes.pomo) {
+  //     console.log('[skipRound]', 'auto starting pomo...');
+  //     setMode(nextMode);
+  //     if (startTimer) {
+  //       console.log('[skipRound]', 'start timer');
+  //     }
+  //   } else {
+  //     console.log('[skipRound]', 'auto start for pomos disabled');
+  //   }
+  // } else return false;
+
+  // return true;
+}
+
+function skipRound() {
+  console.group('skipping round');
+  /* should call from skipRound() */
+  gotoNextRound({ skipping: true });
+  console.groupEnd();
+
+  /* should call from inside startTimer(...) */
+  // console.group('skipping round');
+  // console.log('should start next round?:', gotoNextRound({ startTimer: true }));
+  // console.groupEnd();
+}
 
 function initializeTimer() {
   console.log({ timer });
@@ -786,14 +930,16 @@ window.onload = function () {
     const option = document.createElement('option');
     option.text = soundName.substring(
       0,
-      soundName === 'None' ? undefined : soundName.lastIndexOf('.')
+      soundName === alarmSounds.tickers[0]
+        ? undefined
+        : soundName.lastIndexOf('.')
     );
     option.value = soundName;
     option.selected = soundName === settings.custom.tickingSound;
     elements.dropdownSettingTickingSounds.appendChild(option);
   });
 
-  if (settings.custom.tickingSound === 'None')
+  if (settings.custom.tickingSound === alarmSounds.tickers[0])
     elements.imageRingTick.classList.add('removed');
   else elements.imageRingTick.classList.remove('removed');
 
@@ -931,7 +1077,7 @@ function resetSetting() {
 
   settings.custom = structuredClone(settings.default);
 
-  if (settings.custom.tickingSound === 'None')
+  if (settings.custom.tickingSound === alarmSounds.tickers[0])
     elements.imageRingTick.classList.add('removed');
   else elements.imageRingTick.classList.remove('removed');
 
